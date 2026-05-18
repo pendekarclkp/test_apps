@@ -1,16 +1,73 @@
 {
   "sentrix": [
     {
-      "cluster": "TEST",
-      "ns": 0.5,
-      "va": 0.5,
-      "er": 0.5,
-      "score": 50.0
+      "cluster": "Rupiah",
+      "ns": 0.326,
+      "va": 0.101,
+      "er": 1.0,
+      "score": 46.07
+    },
+    {
+      "cluster": "Inflasi",
+      "ns": 0.14,
+      "va": 0.53,
+      "er": 0.84,
+      "score": 46.7
+    },
+    {
+      "cluster": "BI-Rate",
+      "ns": 0.25,
+      "va": 0.17,
+      "er": 1.0,
+      "score": 45.1
     }
   ],
-  "nolimit": [],
-  "iirs": [],
-  "uploaded_at": "18 May 2026",
+  "nolimit": [
+    {
+      "cluster": "Rupiah",
+      "ns": 0.35,
+      "va": 0.17,
+      "er": 1.0,
+      "score": 49.1
+    },
+    {
+      "cluster": "Inflasi",
+      "ns": 0.14,
+      "va": 0.0,
+      "er": 0.25,
+      "score": 13.1
+    },
+    {
+      "cluster": "BI-Rate",
+      "ns": 0.216,
+      "va": 0.304,
+      "er": 0.271,
+      "score": 25.89
+    }
+  ],
+  "iirs": [
+    {
+      "cluster": "Rupiah",
+      "score_nolimit": 49.1,
+      "score_sentrix": 46.07,
+      "iirs": 47.282
+    },
+    {
+      "cluster": "Inflasi",
+      "score_nolimit": 13.1,
+      "score_sentrix": 46.7,
+      "iirs": 34.94
+    },
+    {
+      "cluster": "BI-Rate",
+      "score_nolimit": 25.89,
+      "score_sentrix": 45.1,
+      "iirs": 38.3765
+    }
+  ],
+  "uploaded_at": "18 May 2026, 10:24 WIB",
   "uploaded_by": "uploader",
-  "filename": "test.xlsx"
+  "filename": "test.xlsx",
+  "periode_bulan": "April",
+  "periode_tahun": "2026"
 }

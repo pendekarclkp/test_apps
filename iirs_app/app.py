@@ -83,6 +83,8 @@ DEFAULT_DATA = {
     'uploaded_at': None,
     'uploaded_by': None,
     'filename': None,
+    'periode_bulan': None,
+    'periode_tahun': None,
 }
 
 # In-memory cache — single source of truth dalam satu proses gunicorn
@@ -110,8 +112,39 @@ def save_data(new_data):
     except Exception:
         pass  # disk write gagal tidak masalah, cache tetap update
 
+BULAN_ID = {
+    'januari':'Januari','februari':'Februari','maret':'Maret','april':'April',
+    'mei':'Mei','juni':'Juni','juli':'Juli','agustus':'Agustus',
+    'september':'September','oktober':'Oktober','november':'November','desember':'Desember',
+    'january':'Januari','february':'Februari','march':'Maret','may':'Mei',
+    'june':'Juni','july':'Juli','august':'Agustus','october':'Oktober',
+}
+
+def extract_period(wb):
+    """Cari 'Periode <Bulan> <Tahun>' di semua sheet, kembalikan string mis. 'April 2026'."""
+    import re
+    pattern = re.compile(
+        r'periode\s+([A-Za-z]+)\s+(\d{4})',
+        re.IGNORECASE
+    )
+    for sheet in wb.sheetnames:
+        for row in wb[sheet].iter_rows(values_only=True):
+            for cell in row:
+                if not cell:
+                    continue
+                m = pattern.search(str(cell))
+                if m:
+                    bulan_raw = m.group(1).lower()
+                    tahun     = m.group(2)
+                    bulan     = BULAN_ID.get(bulan_raw, m.group(1).capitalize())
+                    return bulan, tahun
+    return None, None
+
 def parse_excel(filepath):
     wb = openpyxl.load_workbook(filepath, data_only=True)
+
+    # Ekstrak periode dari file
+    periode_bulan, periode_tahun = extract_period(wb)
 
     ws   = wb['Source Scoring']
     rows = list(ws.iter_rows(values_only=True))
@@ -178,7 +211,7 @@ def parse_excel(filepath):
     if not sentrix or not nolimit or not iirs:
         raise ValueError('Format Excel tidak sesuai. Butuh sheet "Source Scoring" dan "IIRS Integration".')
 
-    return sentrix, nolimit, iirs
+    return sentrix, nolimit, iirs, periode_bulan, periode_tahun
 
 def get_kategori(iirs_val):
     if iirs_val < 35:
@@ -263,6 +296,8 @@ def dashboard():
         uploaded_at=data.get('uploaded_at'),
         uploaded_by=data.get('uploaded_by'),
         filename=data.get('filename'),
+        periode_bulan=data.get('periode_bulan'),
+        periode_tahun=data.get('periode_tahun'),
         chart_labels =json.dumps([r['cluster'] for r in data['iirs']]),
         chart_sentrix=json.dumps([r['score_sentrix'] for r in data['iirs']]),
         chart_nolimit=json.dumps([r['score_nolimit'] for r in data['iirs']]),
@@ -287,14 +322,16 @@ def upload_page():
             save_path = os.path.join(UPLOAD_FOLDER, 'latest.xlsx')
             f.save(save_path)
             try:
-                sentrix, nolimit, iirs = parse_excel(save_path)
+                sentrix, nolimit, iirs, periode_bulan, periode_tahun = parse_excel(save_path)
                 new_data = {
-                    'sentrix':     sentrix,
-                    'nolimit':     nolimit,
-                    'iirs':        iirs,
-                    'uploaded_at': datetime.now().strftime('%d %b %Y, %H:%M WIB'),
-                    'uploaded_by': current_user(),
-                    'filename':    f.filename,
+                    'sentrix':        sentrix,
+                    'nolimit':        nolimit,
+                    'iirs':           iirs,
+                    'uploaded_at':    datetime.now().strftime('%d %b %Y, %H:%M WIB'),
+                    'uploaded_by':    current_user(),
+                    'filename':       f.filename,
+                    'periode_bulan':  periode_bulan,
+                    'periode_tahun':  periode_tahun,
                 }
                 save_data(new_data)
                 data    = load_data()
