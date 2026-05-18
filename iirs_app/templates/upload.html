@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Data — IIRS Protocol Playbook</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117; --card: #161b22; --border: rgba(255,255,255,0.08);
+      --text: #e6edf3; --muted: #8b949e; --accent: #e94560; --blue: #58a6ff;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+    .sidebar {
+      width: 260px; min-height: 100vh; background: var(--card);
+      border-right: 1px solid var(--border); position: fixed; top: 0; left: 0;
+      padding: 1.5rem 0; z-index: 100;
+    }
+    .sidebar-logo { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--border); }
+    .sidebar-logo .icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #e94560, #0f3460);
+      border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; color: #fff; margin-bottom: 0.75rem;
+    }
+    .sidebar-logo h6 { color: #fff; font-weight: 700; margin: 0; font-size: 0.95rem; }
+    .sidebar-logo p  { color: var(--muted); font-size: 0.72rem; margin: 0; }
+    .nav-section { padding: 1rem 1.5rem 0.25rem; font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--muted); font-weight: 600; }
+    .nav-link-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.6rem 1.5rem; color: var(--muted); text-decoration: none;
+      font-size: 0.88rem; transition: all 0.2s;
+    }
+    .nav-link-item:hover, .nav-link-item.active {
+      color: #fff; background: rgba(255,255,255,0.05); border-left: 3px solid var(--accent);
+    }
+    .nav-link-item i { width: 18px; text-align: center; }
+
+    .main-content { margin-left: 260px; }
+    .topbar {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar h5 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+    .user-chip {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      border-radius: 30px; padding: 0.35rem 1rem; font-size: 0.85rem;
+    }
+    .user-chip .avatar {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #2dce89, #0f3460);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; color: #fff; font-weight: 700;
+    }
+    .role-badge {
+      background: rgba(45,206,137,0.15); color: #2dce89;
+      border: 1px solid rgba(45,206,137,0.3); border-radius: 20px;
+      padding: 0.2rem 0.7rem; font-size: 0.72rem; font-weight: 600;
+    }
+    .content { padding: 2rem; }
+
+    /* Drop zone */
+    .drop-zone {
+      border: 2px dashed rgba(88,166,255,0.4);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: rgba(88,166,255,0.03);
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--blue);
+      background: rgba(88,166,255,0.08);
+      transform: scale(1.01);
+    }
+    .drop-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 3rem; color: var(--blue); margin-bottom: 1rem; }
+    .drop-zone h5 { color: var(--text); margin-bottom: 0.5rem; }
+    .drop-zone p  { color: var(--muted); font-size: 0.85rem; margin: 0; }
+
+    /* Panel */
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .panel-header {
+      padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .panel-header h6 { margin: 0; font-weight: 600; font-size: 0.95rem; }
+    .panel-body { padding: 1.5rem; }
+
+    /* Table */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl th {
+      background: rgba(255,255,255,0.04); color: var(--muted);
+      font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 0.65rem 1rem; border-bottom: 1px solid var(--border);
+    }
+    .tbl td {
+      padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.86rem; vertical-align: middle;
+    }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Badges */
+    .badge-ringan  { background:rgba(45,206,137,.2);  color:#2dce89; border:1px solid rgba(45,206,137,.4); padding:.25rem .7rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+    .badge-sedang  { background:rgba(255,193,7,.15);  color:#ffc107; border:1px solid rgba(255,193,7,.3);  padding:.25rem .7rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+    .badge-orange  { background:rgba(253,126,20,.15); color:#fd7e14; border:1px solid rgba(253,126,20,.3); padding:.25rem .7rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+    .badge-danger  { background:rgba(220,53,69,.15);  color:#ff6b6b; border:1px solid rgba(220,53,69,.3);  padding:.25rem .7rem; border-radius:20px; font-size:.75rem; font-weight:600; }
+
+    .iirs-success { color:#2dce89; font-weight:700; }
+    .iirs-warning { color:#ffc107; font-weight:700; }
+    .iirs-orange  { color:#fd7e14; font-weight:700; }
+    .iirs-danger  { color:#ff6b6b; font-weight:700; }
+
+    /* Info box */
+    .info-box {
+      background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.25);
+      border-radius: 12px; padding: 1rem 1.25rem;
+    }
+    .info-box .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-box .val   { color: var(--text); font-weight: 600; font-size: 0.9rem; }
+
+    .btn-upload {
+      background: linear-gradient(135deg, #58a6ff, #0f3460);
+      border: none; border-radius: 10px; padding: 0.75rem 2rem;
+      font-weight: 600; color: #fff; transition: all 0.3s;
+    }
+    .btn-upload:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(88,166,255,0.35); color:#fff; }
+
+    #file-name-display {
+      background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3);
+      border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; color: var(--blue);
+      margin-top: 0.75rem; display: none;
+    }
+
+    @media (max-width: 992px) { .sidebar { display: none; } .main-content { margin-left: 0; } }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon"><i class="fas fa-shield-alt"></i></div>
+    <h6>IIRS Protocol Playbook</h6>
+    <p>Sistem Respons Komunikasi BI</p>
+  </div>
+  <div class="nav-section">Menu</div>
+  {% if role == 'admin' %}
+  <a class="nav-link-item" href="/dashboard">
+    <i class="fas fa-th-large"></i> Dashboard
+  </a>
+  {% endif %}
+  <a class="nav-link-item active" href="/upload">
+    <i class="fas fa-upload"></i> Upload Data
+  </a>
+  <div style="position: absolute; bottom: 1.5rem; left: 0; right: 0; padding: 0 1.5rem;">
+    <a href="/logout" class="nav-link-item" style="color:#e94560; background:rgba(233,69,96,0.1); border-radius:8px;">
+      <i class="fas fa-sign-out-alt"></i> Keluar
+    </a>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <h5><i class="fas fa-upload me-2" style="color:var(--blue)"></i>Upload Data Excel</h5>
+      <small style="color:var(--muted)">Update data Source Score & IIRS</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="role-badge"><i class="fas fa-upload me-1"></i>Uploader</span>
+      <div class="user-chip">
+        <div class="avatar">{{ user[0]|upper }}</div>
+        <span>{{ user }}</span>
+      </div>
+      <a href="/logout" class="btn btn-sm" style="background:rgba(233,69,96,0.15);color:#e94560;border:1px solid rgba(233,69,96,0.3);border-radius:8px;">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }} alert-dismissible fade show py-2 mb-3" role="alert"
+             style="background:{% if cat=='success' %}rgba(45,206,137,0.1);border:1px solid rgba(45,206,137,0.3);color:#2dce89;{% else %}rgba(233,69,96,0.1);border:1px solid rgba(233,69,96,0.3);color:#e94560;{% endif %} border-radius:10px;">
+          <i class="fas fa-{% if cat=='success' %}check-circle{% else %}exclamation-circle{% endif %} me-2"></i>{{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" style="filter:invert(1)"></button>
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="row g-4">
+
+      <!-- Upload form -->
+      <div class="col-lg-7">
+        <div class="panel">
+          <div class="panel-header">
+            <i class="fas fa-file-excel" style="color:#2dce89"></i>
+            <h6>Upload File Excel</h6>
+          </div>
+          <div class="panel-body">
+            <form method="POST" enctype="multipart/form-data" id="upload-form">
+              <div class="drop-zone" id="drop-zone">
+                <input type="file" name="excel_file" id="file-input" accept=".xlsx,.xls" required>
+                <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <h5>Drag & Drop file Excel di sini</h5>
+                <p>atau klik untuk pilih file</p>
+                <p class="mt-2" style="color:rgba(255,255,255,0.25); font-size:0.78rem;">Format: .xlsx | .xls</p>
+              </div>
+              <div id="file-name-display">
+                <i class="fas fa-file-excel me-2"></i><span id="file-name-text">-</span>
+              </div>
+
+              <!-- Format info -->
+              <div class="info-box mt-3">
+                <div class="label mb-2"><i class="fas fa-info-circle me-1"></i>Format Sheet yang Diperlukan</div>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <div class="val"><i class="fas fa-table me-1" style="color:#2dce89"></i> Source Scoring</div>
+                    <small style="color:var(--muted)">Sentrix & No Limit: NS, VA, ER, Score</small>
+                  </div>
+                  <div class="col-6">
+                    <div class="val"><i class="fas fa-wave-square me-1" style="color:#a78bfa"></i> IIRS Integration</div>
+                    <small style="color:var(--muted)">Score NoLimit, Sentrix, IIRS</small>
+                  </div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-upload mt-3 w-100">
+                <i class="fas fa-upload me-2"></i>Upload & Update Data
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="col-lg-5">
+        <div class="panel h-100">
+          <div class="panel-header">
+            <i class="fas fa-history" style="color:#a78bfa"></i>
+            <h6>Status Data Aktif</h6>
+          </div>
+          <div class="panel-body">
+            {% if data.uploaded_at %}
+            <div class="mb-3">
+              <div class="label" style="color:var(--muted); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.5px;">Terakhir Update</div>
+              <div style="font-weight:700; color:#2dce89; font-size:1rem; margin-top:0.25rem;">
+                <i class="fas fa-check-circle me-1"></i>{{ data.uploaded_at }}
+              </div>
+            </div>
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:0.75rem;">
+                  <div style="color:var(--muted); font-size:0.72rem; text-transform:uppercase;">Diupload Oleh</div>
+                  <div style="font-weight:600; font-size:0.9rem; margin-top:0.2rem;">{{ data.uploaded_by }}</div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:0.75rem;">
+                  <div style="color:var(--muted); font-size:0.72rem; text-transform:uppercase;">File</div>
+                  <div style="font-weight:600; font-size:0.82rem; margin-top:0.2rem; word-break:break-all;">{{ data.filename }}</div>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <div class="text-center py-3">
+              <i class="fas fa-database" style="font-size:2rem; color:rgba(255,255,255,0.15);"></i>
+              <div style="color:var(--muted); font-size:0.85rem; margin-top:0.75rem;">Menggunakan data bawaan (default)</div>
+            </div>
+            {% endif %}
+
+            <div style="font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.5rem;">
+              Data IIRS Aktif
+            </div>
+            {% for row in data.iirs %}
+              {% set iirs_val = row.iirs %}
+              {% if iirs_val < 35 %}
+                {% set cat = 'Ringan' %}{% set col = 'success' %}
+              {% elif iirs_val < 50 %}
+                {% set cat = 'Sedang' %}{% set col = 'warning' %}
+              {% elif iirs_val < 60 %}
+                {% set cat = 'Crisis Watch' %}{% set col = 'orange' %}
+              {% else %}
+                {% set cat = 'Crisis' %}{% set col = 'danger' %}
+              {% endif %}
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0; border-bottom:1px solid var(--border);">
+              <span style="font-weight:600;">{{ row.cluster }}</span>
+              <div class="d-flex align-items-center gap-2">
+                <span class="iirs-{{ col }}">{{ '%.2f'|format(row.iirs) }}</span>
+                <span class="badge-{{ col }}">{{ cat }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview hasil parse -->
+      {% if preview %}
+      <div class="col-12">
+        <div class="panel">
+          <div class="panel-header">
+            <i class="fas fa-eye" style="color:#ffc107"></i>
+            <h6>Preview Data yang Diupload</h6>
+            <span class="ms-auto" style="color:#2dce89; font-size:0.82rem;"><i class="fas fa-check me-1"></i>Berhasil diparse</span>
+          </div>
+          <div class="panel-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div style="font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.5rem;">
+                  <i class="fas fa-satellite-dish me-1" style="color:#58a6ff"></i> Sentrix Telkomsel
+                </div>
+                <table class="tbl">
+                  <thead><tr><th>Klaster</th><th>NS</th><th>VA</th><th>ER</th><th>Score</th></tr></thead>
+                  <tbody>
+                    {% for r in preview.sentrix %}
+                    <tr>
+                      <td><strong>{{ r.cluster }}</strong></td>
+                      <td>{{ '%.3f'|format(r.ns) }}</td>
+                      <td>{{ '%.3f'|format(r.va) }}</td>
+                      <td>{{ '%.3f'|format(r.er) }}</td>
+                      <td style="color:#58a6ff; font-weight:600;">{{ '%.2f'|format(r.score) }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="col-md-4">
+                <div style="font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.5rem;">
+                  <i class="fas fa-satellite me-1" style="color:#fd7e14"></i> No Limit
+                </div>
+                <table class="tbl">
+                  <thead><tr><th>Klaster</th><th>NS</th><th>VA</th><th>ER</th><th>Score</th></tr></thead>
+                  <tbody>
+                    {% for r in preview.nolimit %}
+                    <tr>
+                      <td><strong>{{ r.cluster }}</strong></td>
+                      <td>{{ '%.3f'|format(r.ns) }}</td>
+                      <td>{{ '%.3f'|format(r.va) }}</td>
+                      <td>{{ '%.3f'|format(r.er) }}</td>
+                      <td style="color:#fd7e14; font-weight:600;">{{ '%.2f'|format(r.score) }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="col-md-4">
+                <div style="font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:0.5rem;">
+                  <i class="fas fa-wave-square me-1" style="color:#a78bfa"></i> IIRS Integration
+                </div>
+                <table class="tbl">
+                  <thead><tr><th>Klaster</th><th>NoLimit</th><th>Sentrix</th><th>IIRS</th></tr></thead>
+                  <tbody>
+                    {% for r in preview.iirs %}
+                      {% set iv = r.iirs %}
+                      {% if iv < 35 %}{% set ic = 'success' %}
+                      {% elif iv < 50 %}{% set ic = 'warning' %}
+                      {% elif iv < 60 %}{% set ic = 'orange' %}
+                      {% else %}{% set ic = 'danger' %}{% endif %}
+                    <tr>
+                      <td><strong>{{ r.cluster }}</strong></td>
+                      <td>{{ '%.2f'|format(r.score_nolimit) }}</td>
+                      <td>{{ '%.2f'|format(r.score_sentrix) }}</td>
+                      <td><span class="iirs-{{ ic }}">{{ '%.3f'|format(r.iirs) }}</span></td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  const input    = document.getElementById('file-input');
+  const dropZone = document.getElementById('drop-zone');
+  const display  = document.getElementById('file-name-display');
+  const nameText = document.getElementById('file-name-text');
+
+  input.addEventListener('change', () => {
+    if (input.files[0]) {
+      nameText.textContent = input.files[0].name;
+      display.style.display = 'block';
+    }
+  });
+
+  ['dragover','dragenter'].forEach(e => dropZone.addEventListener(e, ev => {
+    ev.preventDefault(); dropZone.classList.add('dragover');
+  }));
+  ['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => {
+    ev.preventDefault(); dropZone.classList.remove('dragover');
+  }));
+  dropZone.addEventListener('drop', ev => {
+    ev.preventDefault();
+    const file = ev.dataTransfer.files[0];
+    if (file) {
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      nameText.textContent = file.name;
+      display.style.display = 'block';
+    }
+  });
+</script>
+</body>
+</html>
