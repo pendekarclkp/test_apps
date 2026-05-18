@@ -1,0 +1,16 @@
+{
+  "sentrix": [
+    {
+      "cluster": "TEST",
+      "ns": 0.5,
+      "va": 0.5,
+      "er": 0.5,
+      "score": 50.0
+    }
+  ],
+  "nolimit": [],
+  "iirs": [],
+  "uploaded_at": "18 May 2026",
+  "uploaded_by": "uploader",
+  "filename": "test.xlsx"
+}

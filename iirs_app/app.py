@@ -6,11 +6,13 @@ import openpyxl
 app = Flask(__name__)
 app.secret_key = 'iirs_secret_key_2026'
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
-DATA_FILE     = os.path.join(os.path.dirname(__file__), 'data', 'current_data.json')
+BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+DATA_FILE     = os.path.join(BASE_DIR, 'data', 'current_data.json')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
 
+# ── Users: admin = dashboard only | uploader = dashboard + upload ─────────────
 USERS = {
     'admin':    {'password': 'admin',    'role': 'admin'},
     'uploader': {'password': 'upload123','role': 'uploader'},
@@ -83,21 +85,35 @@ DEFAULT_DATA = {
     'filename': None,
 }
 
-def load_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE) as f:
-            return json.load(f)
-    return DEFAULT_DATA.copy()
+# In-memory cache — single source of truth dalam satu proses gunicorn
+_cache = {}
 
-def save_data(data):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+def load_data():
+    if _cache:
+        return _cache
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE) as f:
+                _cache.update(json.load(f))
+                return _cache
+        except Exception:
+            pass
+    _cache.update(DEFAULT_DATA)
+    return _cache
+
+def save_data(new_data):
+    _cache.clear()
+    _cache.update(new_data)
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(new_data, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass  # disk write gagal tidak masalah, cache tetap update
 
 def parse_excel(filepath):
     wb = openpyxl.load_workbook(filepath, data_only=True)
 
-    # ── Source Scoring sheet ──────────────────────────────────────────────────
-    ws = wb['Source Scoring']
+    ws   = wb['Source Scoring']
     rows = list(ws.iter_rows(values_only=True))
 
     sentrix_start = nolimit_start = None
@@ -134,10 +150,8 @@ def parse_excel(filepath):
     sentrix = extract_scores(sentrix_start)
     nolimit = extract_scores(nolimit_start)
 
-    # ── IIRS Integration sheet ────────────────────────────────────────────────
-    ws2  = wb['IIRS Integration']
-    rows2 = list(ws2.iter_rows(values_only=True))
-
+    ws2    = wb['IIRS Integration']
+    rows2  = list(ws2.iter_rows(values_only=True))
     header_idx = None
     for i, row in enumerate(rows2):
         if row[0] and str(row[0]).strip() == 'Issue Cluster':
@@ -162,35 +176,46 @@ def parse_excel(filepath):
                 continue
 
     if not sentrix or not nolimit or not iirs:
-        raise ValueError('Format file Excel tidak sesuai. Pastikan sheet "Source Scoring" dan "IIRS Integration" ada dan terisi.')
+        raise ValueError('Format Excel tidak sesuai. Butuh sheet "Source Scoring" dan "IIRS Integration".')
 
     return sentrix, nolimit, iirs
 
 def get_kategori(iirs_val):
     if iirs_val < 35:
-        return 'Ringan',      'Playbook 1',  'success'
+        return 'Ringan',       'Playbook 1',   'success'
     elif iirs_val < 50:
-        return 'Sedang',      'Playbook 2',  'warning'
+        return 'Sedang',       'Playbook 2',   'warning'
     elif iirs_val < 60:
-        return 'Crisis Watch','Crisis Watch', 'orange'
+        return 'Crisis Watch', 'Crisis Watch', 'orange'
     else:
-        return 'Crisis',      'Playbook 3',  'danger'
+        return 'Crisis',       'Playbook 3',   'danger'
 
-def require_login(role=None):
-    if 'user' not in session:
+def current_user():
+    return session.get('user')
+
+def current_role():
+    return USERS.get(current_user(), {}).get('role')
+
+def require_login():
+    if not current_user():
         return redirect(url_for('login'))
-    if role and USERS.get(session['user'], {}).get('role') != role:
-        flash('Akses ditolak.', 'danger')
-        return redirect(url_for('login'))
+    return None
+
+def require_role(role):
+    err = require_login()
+    if err:
+        return err
+    if current_role() != role:
+        flash('Akses ditolak untuk role Anda.', 'danger')
+        return redirect(url_for('dashboard'))
     return None
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
-    if 'user' in session:
-        role = USERS.get(session['user'], {}).get('role')
-        return redirect(url_for('upload_page') if role == 'uploader' else url_for('dashboard'))
+    if current_user():
+        return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -199,8 +224,6 @@ def login():
         if user and user['password'] == password:
             session['user'] = username
             session['role'] = user['role']
-            if user['role'] == 'uploader':
-                return redirect(url_for('upload_page'))
             return redirect(url_for('dashboard'))
         flash('Username atau password salah.', 'danger')
     return render_template('login.html')
@@ -212,31 +235,29 @@ def logout():
 
 @app.route('/dashboard')
 def dashboard():
-    err = require_login(role='admin')
+    err = require_login()
     if err:
         return err
 
     data = load_data()
-    sentrix = data['sentrix']
-    nolimit = data['nolimit']
 
     iirs_enriched = []
     for row in data['iirs']:
         kategori, playbook_key, color = get_kategori(row['iirs'])
         iirs_enriched.append({
             **row,
-            'kategori':    kategori,
+            'kategori':     kategori,
             'playbook_key': playbook_key,
-            'color':       color,
-            'playbook':    PLAYBOOKS.get(playbook_key, {}),
+            'color':        color,
+            'playbook':     PLAYBOOKS.get(playbook_key, {}),
         })
 
     return render_template(
         'dashboard.html',
-        user=session['user'],
-        role=session.get('role'),
-        sentrix=sentrix,
-        nolimit=nolimit,
+        user=current_user(),
+        role=current_role(),
+        sentrix=data['sentrix'],
+        nolimit=data['nolimit'],
         iirs_data=iirs_enriched,
         playbooks=PLAYBOOKS,
         uploaded_at=data.get('uploaded_at'),
@@ -248,15 +269,15 @@ def dashboard():
         chart_iirs   =json.dumps([round(r['iirs'], 2) for r in data['iirs']]),
     )
 
+# Upload: hanya role 'uploader'
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_page():
-    err = require_login()
+    err = require_role('uploader')
     if err:
         return err
 
     data     = load_data()
     preview  = None
-    parse_err = None
 
     if request.method == 'POST':
         f = request.files.get('excel_file')
@@ -272,24 +293,22 @@ def upload_page():
                     'nolimit':     nolimit,
                     'iirs':        iirs,
                     'uploaded_at': datetime.now().strftime('%d %b %Y, %H:%M WIB'),
-                    'uploaded_by': session['user'],
+                    'uploaded_by': current_user(),
                     'filename':    f.filename,
                 }
                 save_data(new_data)
-                data    = new_data
+                data    = load_data()
                 preview = {'sentrix': sentrix, 'nolimit': nolimit, 'iirs': iirs}
-                flash(f'Data berhasil diupload dari file "{f.filename}".', 'success')
+                flash(f'✅ Data berhasil diupload dari "{f.filename}". Dashboard sudah terupdate.', 'success')
             except Exception as e:
-                parse_err = str(e)
-                flash(f'Gagal membaca file: {parse_err}', 'danger')
+                flash(f'❌ Gagal membaca file: {e}', 'danger')
 
     return render_template(
         'upload.html',
-        user=session['user'],
-        role=session.get('role'),
+        user=current_user(),
+        role=current_role(),
         data=data,
         preview=preview,
-        parse_err=parse_err,
     )
 
 if __name__ == '__main__':
