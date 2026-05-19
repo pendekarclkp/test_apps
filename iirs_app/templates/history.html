@@ -270,6 +270,11 @@
                 <i class="fas fa-clock"></i>{{ snap.saved_at or '-' }}
                 &nbsp;&middot;&nbsp;
                 <i class="fas fa-user"></i>disimpan oleh <strong style="color:var(--text);">{{ snap.saved_by or '-' }}</strong>
+                {% if snap.expires_in %}
+                &nbsp;&middot;&nbsp;
+                <i class="fas fa-hourglass-half" style="color:#ffc107;"></i>
+                <span style="color:#ffc107;">berakhir dalam {{ snap.expires_in }}</span>
+                {% endif %}
               </div>
             </div>
             <div style="display:flex;gap:0.5rem;flex-shrink:0;">
