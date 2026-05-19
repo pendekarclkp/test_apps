@@ -65,9 +65,47 @@
       "iirs": 38.3765
     }
   ],
-  "uploaded_at": "18 May 2026, 10:24 WIB",
+  "tindak_lanjut": [
+    {
+      "aspek": "1. Eskalasi",
+      "tier1": "DP2K & DLIPKD memantau dua sumber secara paralel (Sentrix + No Limit); laporan mingguan terintegrasi ke Kepala Divisi DKom.\nSLA: maksimum 24 jam.",
+      "tier2": "Joint issue brief DP2K–DLIPKD ke Kepala Grup + Kepala Satker DKom; dibawa ke RDG Mingguan sebagai early heads-up ke forum BI-WIDE.\nFase siaga (IIRS 50–59): eskalasi diperluas ke DKEM, DKMP, DKSP, dan satker lain.\nSLA: maksimum 12 jam.",
+      "tier3": "Executive brief DP2K–DLIPKD ke ADG bidang; isu menjadi agenda khusus RDG Mingguan bersama Kepala Satker DKom, Kepala Departemen terkait, ADG, dan Gubernur BI.\nSLA: maksimum 6 jam."
+    },
+    {
+      "aspek": "2. Tim & Peran",
+      "tier1": "DP2K: pemilik insight utama, menerjemahkan IIRS menjadi tema komunikasi bulanan. DLIPKD: wakil koordinator insight + eksekutor media digital. DROM: relasi rutin wartawan & KOL. TRPI: cascading tema ke 46 KPwDN.",
+      "tier2": "DP2K & DLIPKD sebagai joint issue owner (sisi Non-Kanal & Kanal BI). DROM mengintensifkan KOL engagement + taklimat tematik. TRPI mengoordinasikan synchronized posting 46 KPwDN.\nJuru Bicara: Kepala Grup. Otoritas pemutus: Kepala Satker DKom.",
+      "tier3": "DP2K merumuskan arah pesan multi-minggu ke Crisis Management Committee. DLIPKD memproduksi konten penuh di 6 kanal + kemitraan. DROM memfasilitasi press conference & KOL coalition. TRPI mengaktivasi penuh 46 KPwDN sebagai frontline regional.\nJuru Bicara: ADG/Gubernur BI; layer ke-2: Kepala DKom."
+    },
+    {
+      "aspek": "3. Pesan & Kanal",
+      "tier1": "Pendekatan edukasi proaktif. Konten organik edukatif (evergreen) di kanal BI, ditopang paid promotion ringan. Taklimat media bulanan reguler pasca-RDG. 46 KPwDN memposting tema bulanan seragam dengan kreativitas lokal.",
+      "tier2": "Klarifikasi reaktif + edukasi tematik intensif. Key message tiga lapis: penegasan faktual → klarifikasi konteks → edukasi mendalam. Paid promotion diperbesar + aktivasi influencer/kreator & clipper. KOL ekonom sebagai secondary amplifier. 46 KPwDN melakukan echoing narasi inti.",
+      "tier3": "Crisis containment penuh + menjaga kredibilitas. Official statement Dewan Gubernur + Q&A lengkap. Seluruh 6 kanal kapasitas penuh + paid promotion maksimal + koalisi kemitraan. Press conference ADG/Gubernur + town hall. 46 KPwDN mendorong advocate GenBI, akademisi, UMKM, dan mitra strategis daerah."
+    },
+    {
+      "aspek": "4. Eksekusi & Koordinasi",
+      "tier1": "Posting konten terjadwal sesuai content plan DLIPKD. Koordinasi internal DKom melalui forum Rapat Redaksi.",
+      "tier2": "Rolling content mingguan dengan A/B testing narasi; pemantauan dua sisi (DP2K mengawasi Non-Kanal BI, DLIPKD mengawasi Kanal BI). DP2K sebagai intelligence center. Koordinasi awal dengan satker substansi (DKEM/DKMP/DKSP) untuk validasi konten teknis.",
+      "tier3": "Pemantauan harian; laporan kondisi eksternal dan kanal BI disampaikan bersamaan agar Committee dapat langsung membandingkan kedua kondisi. Koordinasi seluruh departemen relevan + KSSK (Kemenkeu/OJK/LPS); briefing DPR Komisi XI bila diperlukan."
+    },
+    {
+      "aspek": "5. Evaluasi & Pembelajaran",
+      "tier1": "Review bulanan oleh Kepala Divisi terkait; laporan IIRS dua perspektif menjadi input tema berikutnya. De-eskalasi: tier dasar — naik ke Tier 2 bila IIRS melewati 35.",
+      "tier2": "Weekly review; laporan bersama DP2K–DLIPKD ke RDG Mingguan. De-eskalasi: turun ke Tier 1 bila IIRS stabil di bawah 36, disahkan Kepala Divisi terkait.",
+      "tier3": "Daily review; laporan bersama ke ADG bidang/Gubernur BI. De-eskalasi: turun ke Tier 2 bila IIRS stabil di bawah 60, disahkan Kepala Satker DKom. Feedback Loop menjadi input kalibrasi batas tier & crisis simulation drill."
+    },
+    {
+      "aspek": "Esensi",
+      "tier1": "Active baseline maintenance",
+      "tier2": "Proactive control",
+      "tier3": "Credibility preservation"
+    }
+  ],
+  "uploaded_at": "19 May 2026, 02:03 WIB",
   "uploaded_by": "uploader",
-  "filename": "test.xlsx",
+  "filename": "april2026.xlsx",
   "periode_bulan": "April",
   "periode_tahun": "2026"
 }
