@@ -1,14 +1,15 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-import json, os
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+import json, os, uuid
 from datetime import datetime
 import openpyxl
 
 app = Flask(__name__)
 app.secret_key = 'iirs_secret_key_2026'
 
-BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 DATA_FILE     = os.path.join(BASE_DIR, 'data', 'current_data.json')
+HISTORY_FILE  = os.path.join(BASE_DIR, 'data', 'history.json')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
 
@@ -80,6 +81,7 @@ DEFAULT_DATA = {
         {'cluster': 'Inflasi', 'score_nolimit': 13.10, 'score_sentrix': 46.70, 'iirs': 34.940},
         {'cluster': 'BI-Rate', 'score_nolimit': 25.89, 'score_sentrix': 45.10, 'iirs': 38.3765},
     ],
+    'tindak_lanjut': [],
     'uploaded_at': None,
     'uploaded_by': None,
     'filename': None,
@@ -112,6 +114,26 @@ def save_data(new_data):
     except Exception:
         pass  # disk write gagal tidak masalah, cache tetap update
 
+# ── History helpers ─────────────────────────────────────────────────────────
+def load_history():
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+def save_history(snap):
+    history = load_history()
+    history.insert(0, snap)
+    history = history[:20]  # max 20 entri terbaru
+    try:
+        with open(HISTORY_FILE, 'w') as f:
+            json.dump(history, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+
 BULAN_ID = {
     'januari':'Januari','februari':'Februari','maret':'Maret','april':'April',
     'mei':'Mei','juni':'Juni','juli':'Juli','agustus':'Agustus',
@@ -139,6 +161,48 @@ def extract_period(wb):
                     bulan     = BULAN_ID.get(bulan_raw, m.group(1).capitalize())
                     return bulan, tahun
     return None, None
+
+def parse_tindak_lanjut(ws):
+    """Parse sheet Tindak Lanjut menjadi list dict aspek/tier1/tier2/tier3.
+    Row dengan kolom A = None adalah lanjutan aspek sebelumnya — gabung dengan newline.
+    """
+    result = []
+    current = None
+
+    for row in ws.iter_rows(values_only=True):
+        # Skip header row
+        if row[0] and str(row[0]).strip().lower() in ('aspek',):
+            continue
+
+        aspek = row[0]
+        t1    = str(row[1]).strip() if row[1] is not None else ''
+        t2    = str(row[2]).strip() if row[2] is not None else ''
+        t3    = str(row[3]).strip() if row[3] is not None else ''
+
+        if aspek is not None:
+            # Baris baru — mulai aspek baru
+            if current is not None:
+                result.append(current)
+            current = {
+                'aspek': str(aspek).strip(),
+                'tier1': t1,
+                'tier2': t2,
+                'tier3': t3,
+            }
+        else:
+            # Lanjutan baris sebelumnya
+            if current is not None:
+                if t1:
+                    current['tier1'] = (current['tier1'] + '\n' + t1).strip('\n')
+                if t2:
+                    current['tier2'] = (current['tier2'] + '\n' + t2).strip('\n')
+                if t3:
+                    current['tier3'] = (current['tier3'] + '\n' + t3).strip('\n')
+
+    if current is not None:
+        result.append(current)
+
+    return result
 
 def parse_excel(filepath):
     wb = openpyxl.load_workbook(filepath, data_only=True)
@@ -211,7 +275,15 @@ def parse_excel(filepath):
     if not sentrix or not nolimit or not iirs:
         raise ValueError('Format Excel tidak sesuai. Butuh sheet "Source Scoring" dan "IIRS Integration".')
 
-    return sentrix, nolimit, iirs, periode_bulan, periode_tahun
+    # Parse sheet Tindak Lanjut (opsional)
+    tindak_lanjut = []
+    if 'Tindak Lanjut' in wb.sheetnames:
+        try:
+            tindak_lanjut = parse_tindak_lanjut(wb['Tindak Lanjut'])
+        except Exception:
+            tindak_lanjut = []
+
+    return sentrix, nolimit, iirs, periode_bulan, periode_tahun, tindak_lanjut
 
 def get_kategori(iirs_val):
     if iirs_val < 35:
@@ -243,6 +315,19 @@ def require_role(role):
         return redirect(url_for('dashboard'))
     return None
 
+def enrich_iirs(iirs_list):
+    enriched = []
+    for row in iirs_list:
+        kategori, playbook_key, color = get_kategori(row['iirs'])
+        enriched.append({
+            **row,
+            'kategori':     kategori,
+            'playbook_key': playbook_key,
+            'color':        color,
+            'playbook':     PLAYBOOKS.get(playbook_key, {}),
+        })
+    return enriched
+
 # ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route('/', methods=['GET', 'POST'])
@@ -272,25 +357,42 @@ def dashboard():
     if err:
         return err
 
-    data = load_data()
+    snap_id   = request.args.get('snapshot')
+    snap_data = None
 
-    iirs_enriched = []
-    for row in data['iirs']:
-        kategori, playbook_key, color = get_kategori(row['iirs'])
-        iirs_enriched.append({
-            **row,
-            'kategori':     kategori,
-            'playbook_key': playbook_key,
-            'color':        color,
-            'playbook':     PLAYBOOKS.get(playbook_key, {}),
-        })
+    if snap_id:
+        history = load_history()
+        snap_data = next((s for s in history if s['id'] == snap_id), None)
+
+    if snap_data:
+        data         = snap_data
+        iirs_list    = snap_data.get('iirs', [])
+        tindak_lanjut = snap_data.get('tindak_lanjut', [])
+        is_snapshot  = True
+    else:
+        data         = load_data()
+        iirs_list    = data['iirs']
+        tindak_lanjut = data.get('tindak_lanjut', [])
+        is_snapshot  = False
+        snap_id      = None
+
+    iirs_enriched = enrich_iirs(iirs_list)
+
+    # Hitung rata-rata IIRS untuk menentukan tier aktif
+    avg_iirs = (sum(r['iirs'] for r in iirs_list) / len(iirs_list)) if iirs_list else 0
+    if avg_iirs < 35:
+        active_tier = 1
+    elif avg_iirs < 60:
+        active_tier = 2
+    else:
+        active_tier = 3
 
     return render_template(
         'dashboard.html',
         user=current_user(),
         role=current_role(),
-        sentrix=data['sentrix'],
-        nolimit=data['nolimit'],
+        sentrix=data.get('sentrix', []),
+        nolimit=data.get('nolimit', []),
         iirs_data=iirs_enriched,
         playbooks=PLAYBOOKS,
         uploaded_at=data.get('uploaded_at'),
@@ -298,10 +400,16 @@ def dashboard():
         filename=data.get('filename'),
         periode_bulan=data.get('periode_bulan'),
         periode_tahun=data.get('periode_tahun'),
-        chart_labels =json.dumps([r['cluster'] for r in data['iirs']]),
-        chart_sentrix=json.dumps([r['score_sentrix'] for r in data['iirs']]),
-        chart_nolimit=json.dumps([r['score_nolimit'] for r in data['iirs']]),
-        chart_iirs   =json.dumps([round(r['iirs'], 2) for r in data['iirs']]),
+        tindak_lanjut=tindak_lanjut,
+        active_tier=active_tier,
+        avg_iirs=round(avg_iirs, 2),
+        is_snapshot=is_snapshot,
+        snapshot_id=snap_id,
+        snapshot_saved_at=data.get('saved_at') if is_snapshot else None,
+        chart_labels =json.dumps([r['cluster'] for r in iirs_list]),
+        chart_sentrix=json.dumps([r['score_sentrix'] for r in iirs_list]),
+        chart_nolimit=json.dumps([r['score_nolimit'] for r in iirs_list]),
+        chart_iirs   =json.dumps([round(r['iirs'], 2) for r in iirs_list]),
     )
 
 # Upload: hanya role 'uploader'
@@ -322,11 +430,12 @@ def upload_page():
             save_path = os.path.join(UPLOAD_FOLDER, 'latest.xlsx')
             f.save(save_path)
             try:
-                sentrix, nolimit, iirs, periode_bulan, periode_tahun = parse_excel(save_path)
+                sentrix, nolimit, iirs, periode_bulan, periode_tahun, tindak_lanjut = parse_excel(save_path)
                 new_data = {
                     'sentrix':        sentrix,
                     'nolimit':        nolimit,
                     'iirs':           iirs,
+                    'tindak_lanjut':  tindak_lanjut,
                     'uploaded_at':    datetime.now().strftime('%d %b %Y, %H:%M WIB'),
                     'uploaded_by':    current_user(),
                     'filename':       f.filename,
@@ -347,6 +456,72 @@ def upload_page():
         data=data,
         preview=preview,
     )
+
+# ── Admin: Save Snapshot ──────────────────────────────────────────────────────
+
+@app.route('/save-snapshot', methods=['POST'])
+def save_snapshot():
+    err = require_role('admin')
+    if err:
+        return err
+
+    data = load_data()
+    snap = {
+        'id':           str(uuid.uuid4()),
+        'saved_at':     datetime.now().strftime('%d %b %Y, %H:%M WIB'),
+        'saved_by':     current_user(),
+        'periode_bulan': data.get('periode_bulan'),
+        'periode_tahun': data.get('periode_tahun'),
+        'filename':     data.get('filename'),
+        'sentrix':      data.get('sentrix', []),
+        'nolimit':      data.get('nolimit', []),
+        'iirs':         data.get('iirs', []),
+        'tindak_lanjut': data.get('tindak_lanjut', []),
+    }
+    save_history(snap)
+    flash(f'✅ Snapshot dashboard berhasil disimpan.', 'success')
+    return redirect(url_for('dashboard'))
+
+# ── Admin: History ────────────────────────────────────────────────────────────
+
+@app.route('/history')
+def history_page():
+    err = require_role('admin')
+    if err:
+        return err
+
+    history = load_history()
+    return render_template(
+        'history.html',
+        user=current_user(),
+        role=current_role(),
+        history=history,
+    )
+
+@app.route('/history/<snap_id>')
+def history_detail(snap_id):
+    err = require_role('admin')
+    if err:
+        return err
+    return redirect(url_for('dashboard', snapshot=snap_id))
+
+# ── Admin: Delete Snapshot ────────────────────────────────────────────────────
+
+@app.route('/delete-snapshot/<snap_id>', methods=['POST'])
+def delete_snapshot(snap_id):
+    err = require_role('admin')
+    if err:
+        return err
+
+    history = load_history()
+    history = [s for s in history if s['id'] != snap_id]
+    try:
+        with open(HISTORY_FILE, 'w') as f:
+            json.dump(history, f, indent=2, ensure_ascii=False)
+    except Exception:
+        pass
+    flash('Snapshot berhasil dihapus.', 'success')
+    return redirect(url_for('history_page'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
