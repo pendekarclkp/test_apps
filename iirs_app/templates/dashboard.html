@@ -689,24 +689,39 @@
     <!-- ===== SECTION: TINDAK LANJUT ===== -->
     <div id="section-tindak-lanjut" class="section-hidden">
 
-      <!-- Info bar: tier aktif -->
-      <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
-        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:0.55rem 1.25rem;display:flex;align-items:center;gap:0.75rem;">
-          <span style="color:var(--muted);font-size:0.82rem;">Rata-rata IIRS:</span>
-          <strong style="font-size:1.05rem;
-            {% if active_tier == 1 %}color:#2dce89;
-            {% elif active_tier == 2 %}color:#ffc107;
-            {% else %}color:#ff6b6b;{% endif %}">
-            {{ avg_iirs }}
-          </strong>
-          <span style="font-size:0.82rem;
-            {% if active_tier == 1 %}color:#2dce89;
-            {% elif active_tier == 2 %}color:#ffc107;
-            {% else %}color:#ff6b6b;{% endif %}">
-            {% if active_tier == 1 %}— Tier 1 Ringan Aktif
-            {% elif active_tier == 2 %}— Tier 2 Sedang Aktif
-            {% else %}— Tier 3 Crisis Aktif{% endif %}
-          </span>
+      <!-- Info bar: tier per klaster isu -->
+      <div class="mb-3">
+        <div style="color:var(--muted);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:0.5rem;font-weight:600;">
+          <i class="fas fa-layer-group me-1" style="color:#58a6ff;"></i>Tier Aktif per Klaster Isu
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for c in cluster_tiers %}
+          <div style="background:rgba(255,255,255,0.04);border:1px solid
+              {% if c.tier == 1 %}rgba(45,206,137,0.4)
+              {% elif c.tier == 2 %}rgba(255,193,7,0.4)
+              {% else %}rgba(255,107,107,0.4){% endif %};
+              border-radius:10px;padding:0.6rem 1rem;display:flex;align-items:center;gap:0.75rem;min-width:240px;">
+            <div style="width:8px;height:8px;border-radius:50%;
+                {% if c.tier == 1 %}background:#2dce89;
+                {% elif c.tier == 2 %}background:#ffc107;
+                {% else %}background:#ff6b6b;{% endif %}"></div>
+            <div style="flex:1;">
+              <div style="color:var(--text);font-weight:700;font-size:0.92rem;line-height:1.1;">{{ c.cluster }}</div>
+              <div style="color:var(--muted);font-size:0.74rem;margin-top:0.15rem;">
+                IIRS <strong style="color:
+                  {% if c.tier == 1 %}#2dce89
+                  {% elif c.tier == 2 %}#ffc107
+                  {% else %}#ff6b6b{% endif %};">{{ '%.2f'|format(c.iirs) }}</strong>
+              </div>
+            </div>
+            <span style="font-size:0.72rem;font-weight:700;padding:0.25rem 0.6rem;border-radius:6px;white-space:nowrap;
+              {% if c.tier == 1 %}background:rgba(45,206,137,0.15);color:#2dce89;
+              {% elif c.tier == 2 %}background:rgba(255,193,7,0.15);color:#ffc107;
+              {% else %}background:rgba(255,107,107,0.15);color:#ff6b6b;{% endif %}">
+              {{ c.tier_label }}
+            </span>
+          </div>
+          {% endfor %}
         </div>
       </div>
 
@@ -715,22 +730,49 @@
       <div class="panel">
         <div class="panel-header">
           <i class="fas fa-tasks" style="color:#58a6ff"></i>
-          <h6>Tindak Lanjut — Protokol Respons</h6>
-          <small class="ms-auto" style="color:var(--muted);">Kolom aktif sesuai rata-rata IIRS</small>
+          <h6>Tindak Lanjut — Protokol Respons per Klaster Isu</h6>
+          <small class="ms-auto" style="color:var(--muted);">Klaster ditampilkan di header kolom tier-nya</small>
         </div>
         <div style="overflow-x:auto;">
           <table class="tl-table">
             <thead>
               <tr>
                 <th style="color:var(--muted);background:rgba(255,255,255,0.03);min-width:120px;">Aspek</th>
-                <th class="tl-th-tier1{% if active_tier == 1 %} active-tier-header{% endif %}" style="min-width:220px;">
-                  Tier 1 — Ringan (IIRS 0–35)
+                <th class="tl-th-tier1{% if 1 in tiers_active %} active-tier-header{% endif %}" style="min-width:220px;">
+                  <div>Tier 1 — Ringan (IIRS 0–35)</div>
+                  <div style="margin-top:0.4rem;display:flex;flex-wrap:wrap;gap:0.25rem;">
+                    {% for c in cluster_tiers if c.tier == 1 %}
+                    <span style="font-size:0.7rem;font-weight:700;background:rgba(45,206,137,0.2);color:#2dce89;padding:0.15rem 0.5rem;border-radius:5px;text-transform:none;letter-spacing:0;">
+                      {{ c.cluster }} · {{ '%.2f'|format(c.iirs) }}
+                    </span>
+                    {% else %}
+                    <span style="font-size:0.7rem;color:rgba(139,148,158,0.5);text-transform:none;letter-spacing:0;">—</span>
+                    {% endfor %}
+                  </div>
                 </th>
-                <th class="tl-th-tier2{% if active_tier == 2 %} active-tier-header{% endif %}" style="min-width:220px;">
-                  Tier 2 — Sedang (IIRS 36–59)
+                <th class="tl-th-tier2{% if 2 in tiers_active %} active-tier-header{% endif %}" style="min-width:220px;">
+                  <div>Tier 2 — Sedang (IIRS 36–59)</div>
+                  <div style="margin-top:0.4rem;display:flex;flex-wrap:wrap;gap:0.25rem;">
+                    {% for c in cluster_tiers if c.tier == 2 %}
+                    <span style="font-size:0.7rem;font-weight:700;background:rgba(255,193,7,0.2);color:#ffc107;padding:0.15rem 0.5rem;border-radius:5px;text-transform:none;letter-spacing:0;">
+                      {{ c.cluster }} · {{ '%.2f'|format(c.iirs) }}
+                    </span>
+                    {% else %}
+                    <span style="font-size:0.7rem;color:rgba(139,148,158,0.5);text-transform:none;letter-spacing:0;">—</span>
+                    {% endfor %}
+                  </div>
                 </th>
-                <th class="tl-th-tier3{% if active_tier == 3 %} active-tier-header{% endif %}" style="min-width:220px;">
-                  Tier 3 — Crisis (IIRS ≥60)
+                <th class="tl-th-tier3{% if 3 in tiers_active %} active-tier-header{% endif %}" style="min-width:220px;">
+                  <div>Tier 3 — Crisis (IIRS ≥60)</div>
+                  <div style="margin-top:0.4rem;display:flex;flex-wrap:wrap;gap:0.25rem;">
+                    {% for c in cluster_tiers if c.tier == 3 %}
+                    <span style="font-size:0.7rem;font-weight:700;background:rgba(255,107,107,0.2);color:#ff6b6b;padding:0.15rem 0.5rem;border-radius:5px;text-transform:none;letter-spacing:0;">
+                      {{ c.cluster }} · {{ '%.2f'|format(c.iirs) }}
+                    </span>
+                    {% else %}
+                    <span style="font-size:0.7rem;color:rgba(139,148,158,0.5);text-transform:none;letter-spacing:0;">—</span>
+                    {% endfor %}
+                  </div>
                 </th>
               </tr>
             </thead>
@@ -738,9 +780,9 @@
               {% for item in tindak_lanjut %}
               <tr>
                 <td class="col-aspek">{{ item.aspek }}</td>
-                <td class="tl-tier1{% if active_tier == 1 %} active-tier{% endif %}">{{ item.tier1 or '—' }}</td>
-                <td class="tl-tier2{% if active_tier == 2 %} active-tier{% endif %}">{{ item.tier2 or '—' }}</td>
-                <td class="tl-tier3{% if active_tier == 3 %} active-tier{% endif %}">{{ item.tier3 or '—' }}</td>
+                <td class="tl-tier1{% if 1 in tiers_active %} active-tier{% endif %}">{{ item.tier1 or '—' }}</td>
+                <td class="tl-tier2{% if 2 in tiers_active %} active-tier{% endif %}">{{ item.tier2 or '—' }}</td>
+                <td class="tl-tier3{% if 3 in tiers_active %} active-tier{% endif %}">{{ item.tier3 or '—' }}</td>
               </tr>
               {% endfor %}
             </tbody>

@@ -407,14 +407,28 @@ def dashboard():
 
     iirs_enriched = enrich_iirs(iirs_list)
 
-    # Hitung rata-rata IIRS untuk menentukan tier aktif
+    # Hitung tier per klaster (Tier 1: <35, Tier 2: 35-59, Tier 3: >=60)
+    def to_tier(v):
+        if v < 35:   return 1
+        elif v < 60: return 2
+        else:        return 3
+
+    cluster_tiers = []
+    for row in iirs_enriched:
+        tier = to_tier(row['iirs'])
+        row['tier'] = tier
+        cluster_tiers.append({
+            'cluster': row['cluster'],
+            'iirs':    row['iirs'],
+            'tier':    tier,
+            'tier_label': {1:'Tier 1 Ringan',2:'Tier 2 Sedang',3:'Tier 3 Crisis'}[tier],
+            'color':   {1:'success',2:'warning',3:'danger'}[tier],
+        })
+
+    # Tier aktif = tier paling parah dari semua klaster
+    active_tier = max([c['tier'] for c in cluster_tiers], default=1)
+    tiers_active = sorted({c['tier'] for c in cluster_tiers}) if cluster_tiers else [1]
     avg_iirs = (sum(r['iirs'] for r in iirs_list) / len(iirs_list)) if iirs_list else 0
-    if avg_iirs < 35:
-        active_tier = 1
-    elif avg_iirs < 60:
-        active_tier = 2
-    else:
-        active_tier = 3
 
     return render_template(
         'dashboard.html',
@@ -431,6 +445,8 @@ def dashboard():
         periode_tahun=data.get('periode_tahun'),
         tindak_lanjut=tindak_lanjut,
         active_tier=active_tier,
+        cluster_tiers=cluster_tiers,
+        tiers_active=tiers_active,
         avg_iirs=round(avg_iirs, 2),
         is_snapshot=is_snapshot,
         snapshot_id=snap_id,
