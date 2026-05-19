@@ -208,7 +208,10 @@
   <div class="topbar">
     <div>
       <h5><i class="fas fa-history me-2" style="color:var(--accent)"></i>History Snapshot Dashboard</h5>
-      <small style="color:var(--muted)">Riwayat dashboard yang telah disimpan (maks. 20 entri)</small>
+      <small style="color:var(--muted)">
+        <i class="fas fa-clock me-1" style="color:#ffc107;"></i>
+        Retensi <strong>{{ retention_days }} hari</strong> — snapshot lebih lama akan otomatis dihapus (maks. 20 entri)
+      </small>
     </div>
     <div class="d-flex align-items-center gap-3">
       <a href="/dashboard" class="btn btn-sm" style="background:rgba(88,166,255,0.12);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);border-radius:8px;">

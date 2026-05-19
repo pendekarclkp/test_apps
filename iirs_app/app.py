@@ -521,12 +521,30 @@ def history_page():
     if err:
         return err
 
+    from datetime import timedelta
     history = load_history()
+    now = datetime.now()
+    for snap in history:
+        iso = snap.get('saved_at_iso')
+        if iso:
+            try:
+                saved = datetime.fromisoformat(iso)
+                expires = saved + timedelta(days=RETENTION_DAYS)
+                remaining = expires - now
+                days = max(0, remaining.days)
+                hours = max(0, remaining.seconds // 3600) if remaining.total_seconds() > 0 else 0
+                snap['expires_in'] = f'{days} hari {hours} jam' if days > 0 else f'{hours} jam'
+            except (ValueError, TypeError):
+                snap['expires_in'] = None
+        else:
+            snap['expires_in'] = None
+
     return render_template(
         'history.html',
         user=current_user(),
         role=current_role(),
         history=history,
+        retention_days=RETENTION_DAYS,
     )
 
 @app.route('/history/<snap_id>')
