@@ -1042,6 +1042,54 @@
     }
   });
 
+  // Gauge charts per klaster (IIRS section)
+  const gaugeCenterText = {
+    id: 'gaugeCenterText',
+    afterDatasetDraw(chart) {
+      const { ctx, chartArea } = chart;
+      const val = chart.config.options.plugins.gaugeCenterText.value;
+      const color = chart.config.options.plugins.gaugeCenterText.color;
+      const cx = (chartArea.left + chartArea.right) / 2;
+      const cy = chartArea.bottom - 8;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = color;
+      ctx.font = 'bold 1.6rem sans-serif';
+      ctx.fillText(val.toFixed(2), cx, cy);
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '0.7rem sans-serif';
+      ctx.fillText('IIRS / 100', cx, cy + 16);
+      ctx.restore();
+    }
+  };
+  iirsData.forEach((val, i) => {
+    const el = document.getElementById('gaugeChart' + (i + 1));
+    if (!el) return;
+    const v = Number(val) || 0;
+    const color = v < 35 ? '#2dce89' : v < 50 ? '#ffc107' : v < 60 ? '#fd7e14' : '#ff6b6b';
+    new Chart(el, {
+      type: 'doughnut',
+      data: {
+        datasets: [{
+          data: [v, Math.max(0, 100 - v)],
+          backgroundColor: [color, 'rgba(255,255,255,0.06)'],
+          borderColor: [color, 'rgba(255,255,255,0.08)'],
+          borderWidth: 1,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        circumference: 180, rotation: -90, cutout: '72%',
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: false },
+          gaugeCenterText: { value: v, color: color }
+        }
+      },
+      plugins: [gaugeCenterText]
+    });
+  });
+
   // Navigation
   const sections = ['overview', 'source-score', 'iirs', 'tindak-lanjut', 'ews'];
   const titles = {
