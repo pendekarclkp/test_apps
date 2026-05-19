@@ -202,6 +202,74 @@
     }
     .ews-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
 
+    /* Admin Tools sidebar */
+    .admin-tools-section {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1.5rem;
+      background: rgba(255,193,7,0.05);
+      border-top: 1px solid rgba(255,193,7,0.15);
+      border-bottom: 1px solid rgba(255,193,7,0.15);
+    }
+    .admin-tools-section .nav-section { padding: 0 0 0.25rem; color: rgba(255,193,7,0.8); }
+    .admin-btn {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.55rem 0;
+      color: rgba(255,193,7,0.85);
+      text-decoration: none;
+      font-size: 0.87rem;
+      cursor: pointer;
+      background: none; border: none; width: 100%; text-align: left;
+      transition: color 0.2s;
+    }
+    .admin-btn:hover { color: #ffc107; }
+    .admin-btn i { width: 18px; text-align: center; }
+
+    /* Tindak Lanjut table */
+    .tl-table { width: 100%; border-collapse: collapse; }
+    .tl-table th {
+      padding: 0.75rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid var(--border);
+    }
+    .tl-table td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.82rem;
+      line-height: 1.55;
+      vertical-align: top;
+      white-space: pre-wrap;
+    }
+    .tl-table tr:last-child td { border-bottom: none; }
+    .tl-table tr:hover td { background: rgba(255,255,255,0.025); }
+    .tl-table .col-aspek { color: var(--text); font-weight: 600; font-size: 0.88rem; white-space: normal; min-width: 120px; }
+    .tl-tier1 { color: #8b949e; }
+    .tl-tier2 { color: #8b949e; }
+    .tl-tier3 { color: #8b949e; }
+    .tl-tier1.active-tier { color: #e6edf3; background: rgba(45,206,137,0.06); }
+    .tl-tier2.active-tier { color: #e6edf3; background: rgba(255,193,7,0.06); }
+    .tl-tier3.active-tier { color: #e6edf3; background: rgba(255,107,107,0.06); }
+    .tl-th-tier1 { background: rgba(45,206,137,0.12); color: #2dce89; border-radius: 6px 6px 0 0; }
+    .tl-th-tier2 { background: rgba(255,193,7,0.12); color: #ffc107; border-radius: 6px 6px 0 0; }
+    .tl-th-tier3 { background: rgba(255,107,107,0.12); color: #ff6b6b; border-radius: 6px 6px 0 0; }
+    .tl-th-tier1.active-tier-header { background: rgba(45,206,137,0.25); box-shadow: 0 2px 0 #2dce89; }
+    .tl-th-tier2.active-tier-header { background: rgba(255,193,7,0.25); box-shadow: 0 2px 0 #ffc107; }
+    .tl-th-tier3.active-tier-header { background: rgba(255,107,107,0.25); box-shadow: 0 2px 0 #ff6b6b; }
+
+    /* Snapshot banner */
+    .snapshot-banner {
+      background: rgba(255,193,7,0.1);
+      border: 1px solid rgba(255,193,7,0.35);
+      border-radius: 10px;
+      padding: 0.75rem 1.25rem;
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .snapshot-banner .banner-text { color: #ffc107; font-size: 0.9rem; }
+    .snapshot-banner .banner-text i { margin-right: 0.5rem; }
+
     /* Chart container */
     .chart-wrap { position: relative; height: 260px; }
 
@@ -250,6 +318,19 @@
     <i class="fas fa-upload"></i> Upload Data
   </a>
   {% endif %}
+  {% if role == 'admin' %}
+  <div class="admin-tools-section">
+    <div class="nav-section" style="padding:0 0 0.5rem;">Admin Tools</div>
+    <form method="POST" action="/save-snapshot" style="margin:0;">
+      <button type="submit" class="admin-btn">
+        <i class="fas fa-save"></i> Simpan Dashboard
+      </button>
+    </form>
+    <a href="/history" class="admin-btn" style="display:flex;">
+      <i class="fas fa-history"></i> History
+    </a>
+  </div>
+  {% endif %}
   <div style="position: absolute; bottom: 1.5rem; left: 0; right: 0; padding: 0 1.5rem;">
     <a href="/logout" class="nav-link-item" style="color:#e94560; border-radius: 8px; background: rgba(233,69,96,0.1);">
       <i class="fas fa-sign-out-alt"></i> Keluar
@@ -292,6 +373,21 @@
   </div>
 
   <div class="content">
+
+    <!-- ===== SNAPSHOT BANNER ===== -->
+    {% if is_snapshot %}
+    <div class="snapshot-banner">
+      <div class="banner-text">
+        <i class="fas fa-clock"></i>
+        <strong>Melihat data historis:</strong>
+        {{ snapshot_saved_at or '' }}
+        {% if periode_bulan and periode_tahun %} — Periode {{ periode_bulan }} {{ periode_tahun }}{% endif %}
+      </div>
+      <a href="/dashboard" class="btn btn-sm" style="background:rgba(255,193,7,0.2);color:#ffc107;border:1px solid rgba(255,193,7,0.4);border-radius:7px;white-space:nowrap;">
+        <i class="fas fa-arrow-left me-1"></i> Kembali ke Data Aktif
+      </a>
+    </div>
+    {% endif %}
 
     <!-- ===== SECTION: OVERVIEW ===== -->
     <div id="section-overview">
@@ -592,6 +688,74 @@
 
     <!-- ===== SECTION: TINDAK LANJUT ===== -->
     <div id="section-tindak-lanjut" class="section-hidden">
+
+      <!-- Info bar: tier aktif -->
+      <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+        <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:0.55rem 1.25rem;display:flex;align-items:center;gap:0.75rem;">
+          <span style="color:var(--muted);font-size:0.82rem;">Rata-rata IIRS:</span>
+          <strong style="font-size:1.05rem;
+            {% if active_tier == 1 %}color:#2dce89;
+            {% elif active_tier == 2 %}color:#ffc107;
+            {% else %}color:#ff6b6b;{% endif %}">
+            {{ avg_iirs }}
+          </strong>
+          <span style="font-size:0.82rem;
+            {% if active_tier == 1 %}color:#2dce89;
+            {% elif active_tier == 2 %}color:#ffc107;
+            {% else %}color:#ff6b6b;{% endif %}">
+            {% if active_tier == 1 %}— Tier 1 Ringan Aktif
+            {% elif active_tier == 2 %}— Tier 2 Sedang Aktif
+            {% else %}— Tier 3 Crisis Aktif{% endif %}
+          </span>
+        </div>
+      </div>
+
+      {% if tindak_lanjut %}
+      <!-- Tabel dari Excel -->
+      <div class="panel">
+        <div class="panel-header">
+          <i class="fas fa-tasks" style="color:#58a6ff"></i>
+          <h6>Tindak Lanjut — Protokol Respons</h6>
+          <small class="ms-auto" style="color:var(--muted);">Kolom aktif sesuai rata-rata IIRS</small>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="tl-table">
+            <thead>
+              <tr>
+                <th style="color:var(--muted);background:rgba(255,255,255,0.03);min-width:120px;">Aspek</th>
+                <th class="tl-th-tier1{% if active_tier == 1 %} active-tier-header{% endif %}" style="min-width:220px;">
+                  Tier 1 — Ringan (IIRS 0–35)
+                </th>
+                <th class="tl-th-tier2{% if active_tier == 2 %} active-tier-header{% endif %}" style="min-width:220px;">
+                  Tier 2 — Sedang (IIRS 36–59)
+                </th>
+                <th class="tl-th-tier3{% if active_tier == 3 %} active-tier-header{% endif %}" style="min-width:220px;">
+                  Tier 3 — Crisis (IIRS ≥60)
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in tindak_lanjut %}
+              <tr>
+                <td class="col-aspek">{{ item.aspek }}</td>
+                <td class="tl-tier1{% if active_tier == 1 %} active-tier{% endif %}">{{ item.tier1 or '—' }}</td>
+                <td class="tl-tier2{% if active_tier == 2 %} active-tier{% endif %}">{{ item.tier2 or '—' }}</td>
+                <td class="tl-tier3{% if active_tier == 3 %} active-tier{% endif %}">{{ item.tier3 or '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {% else %}
+      <!-- Fallback: Playbook lama kalau tindak_lanjut kosong -->
+      <div class="alert mb-3" style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.25);border-radius:10px;color:#58a6ff;font-size:0.85rem;">
+        <i class="fas fa-info-circle me-2"></i>
+        Data tindak lanjut belum tersedia dari Excel. Menampilkan playbook referensi.
+        {% if role == 'uploader' %}<a href="/upload" style="color:#ffc107;margin-left:0.5rem;">Upload file Excel dengan sheet "Tindak Lanjut"</a>{% endif %}
+      </div>
+
       <div class="row g-3 mb-4">
         {% for row in iirs_data %}
         <div class="col-12">
@@ -642,7 +806,6 @@
           </div>
         </div>
         {% endfor %}
-
       </div>
 
       <!-- All playbooks reference -->
@@ -670,6 +833,8 @@
           </div>
         </div>
       </div>
+      {% endif %}
+
     </div>
 
     <!-- ===== SECTION: EWS ===== -->

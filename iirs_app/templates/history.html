@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History Snapshot — IIRS Protocol Playbook</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card-bg: #161b22;
+      --border: rgba(255,255,255,0.08);
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #e94560;
+      --accent2: #58a6ff;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      min-height: 100vh;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0; left: 0;
+      padding: 1.5rem 0;
+      z-index: 100;
+    }
+    .sidebar-logo {
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo .icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #e94560, #0f3460);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; color: #fff;
+      margin-bottom: 0.75rem;
+    }
+    .sidebar-logo h6 { color: #fff; font-weight: 700; margin: 0; font-size: 0.95rem; }
+    .sidebar-logo p { color: var(--muted); font-size: 0.72rem; margin: 0; }
+    .nav-section {
+      padding: 1rem 1.5rem 0.25rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .nav-link-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.6rem 1.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      border-radius: 0;
+      transition: all 0.2s;
+    }
+    .nav-link-item:hover, .nav-link-item.active {
+      color: #fff;
+      background: rgba(255,255,255,0.05);
+      border-left: 3px solid var(--accent);
+    }
+    .nav-link-item i { width: 18px; text-align: center; }
+    /* Admin Tools sidebar */
+    .admin-tools-section {
+      margin: 0.5rem 0;
+      padding: 0.75rem 1.5rem;
+      background: rgba(255,193,7,0.05);
+      border-top: 1px solid rgba(255,193,7,0.15);
+      border-bottom: 1px solid rgba(255,193,7,0.15);
+    }
+    .admin-btn {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.55rem 0;
+      color: rgba(255,193,7,0.85);
+      text-decoration: none;
+      font-size: 0.87rem;
+      cursor: pointer;
+      background: none; border: none; width: 100%; text-align: left;
+      transition: color 0.2s;
+    }
+    .admin-btn:hover { color: #ffc107; }
+    .admin-btn i { width: 18px; text-align: center; }
+    /* Main */
+    .main-content { margin-left: 260px; padding: 0; }
+    .topbar {
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .topbar h5 { margin: 0; font-size: 1.05rem; font-weight: 600; }
+    .user-chip {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 0.35rem 1rem;
+      font-size: 0.85rem;
+    }
+    .user-chip .avatar {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, #e94560, #0f3460);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; color: #fff; font-weight: 700;
+    }
+    .content { padding: 2rem; }
+    /* Cards */
+    .snap-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    }
+    .snap-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+      border-color: rgba(255,255,255,0.15);
+    }
+    .snap-card .periode {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.25rem;
+    }
+    .snap-card .meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .snap-card .meta i { margin-right: 0.35rem; }
+    .snap-card .filename {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+    }
+    .empty-state .empty-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1.25rem;
+      opacity: 0.3;
+    }
+    .empty-state h5 { color: var(--text); font-weight: 600; margin-bottom: 0.5rem; }
+    .empty-state p { font-size: 0.88rem; max-width: 400px; margin: 0 auto; }
+    /* Flash messages */
+    .flash-container { padding: 1rem 2rem 0; }
+    @media (max-width: 992px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="icon"><i class="fas fa-shield-alt"></i></div>
+    <h6>IIRS Protocol Playbook</h6>
+    <p>Sistem Respons Komunikasi BI</p>
+  </div>
+  <div class="nav-section">Menu Utama</div>
+  <a class="nav-link-item" href="/dashboard">
+    <i class="fas fa-th-large"></i> Dashboard
+  </a>
+  <div class="admin-tools-section">
+    <div class="nav-section" style="padding:0 0 0.5rem;color:rgba(255,193,7,0.8);">Admin Tools</div>
+    <form method="POST" action="/save-snapshot" style="margin:0;">
+      <button type="submit" class="admin-btn">
+        <i class="fas fa-save"></i> Simpan Dashboard
+      </button>
+    </form>
+    <a href="/history" class="admin-btn active" style="display:flex;color:#ffc107;">
+      <i class="fas fa-history"></i> History
+    </a>
+  </div>
+  <div style="position: absolute; bottom: 1.5rem; left: 0; right: 0; padding: 0 1.5rem;">
+    <a href="/logout" class="nav-link-item" style="color:#e94560; border-radius: 8px; background: rgba(233,69,96,0.1);">
+      <i class="fas fa-sign-out-alt"></i> Keluar
+    </a>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main-content">
+  <div class="topbar">
+    <div>
+      <h5><i class="fas fa-history me-2" style="color:var(--accent)"></i>History Snapshot Dashboard</h5>
+      <small style="color:var(--muted)">Riwayat dashboard yang telah disimpan (maks. 20 entri)</small>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <a href="/dashboard" class="btn btn-sm" style="background:rgba(88,166,255,0.12);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);border-radius:8px;">
+        <i class="fas fa-arrow-left me-1"></i> Kembali
+      </a>
+      <div class="user-chip">
+        <div class="avatar">{{ user[0]|upper }}</div>
+        <span>{{ user }}</span>
+      </div>
+      <a href="/logout" class="btn btn-sm" style="background:rgba(233,69,96,0.15); color:#e94560; border:1px solid rgba(233,69,96,0.3); border-radius:8px;">
+        <i class="fas fa-sign-out-alt"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-container">
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" style="background:{% if category=='success' %}rgba(45,206,137,0.12){% else %}rgba(233,69,96,0.12){% endif %};border:1px solid {% if category=='success' %}rgba(45,206,137,0.35){% else %}rgba(233,69,96,0.35){% endif %};color:{% if category=='success' %}#2dce89{% else %}#e94560{% endif %};border-radius:10px;" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" style="filter:invert(1);opacity:0.5;"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  <div class="content">
+
+    {% if history %}
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div style="color:var(--muted);font-size:0.88rem;">
+        <i class="fas fa-layer-group me-1"></i>
+        {{ history|length }} snapshot tersimpan
+      </div>
+    </div>
+
+    <div class="row g-3">
+      {% for snap in history %}
+      <div class="col-12 col-lg-6">
+        <div class="snap-card">
+          <div class="d-flex align-items-start justify-content-between gap-2">
+            <div>
+              <div class="periode">
+                {% if snap.periode_bulan and snap.periode_tahun %}
+                  <i class="fas fa-calendar-alt me-2" style="color:#e94560;font-size:0.95rem;"></i>
+                  {{ snap.periode_bulan }} {{ snap.periode_tahun }}
+                {% else %}
+                  <i class="fas fa-calendar-times me-2" style="color:var(--muted);font-size:0.95rem;"></i>
+                  Periode tidak diketahui
+                {% endif %}
+              </div>
+              <div class="meta">
+                <i class="fas fa-clock"></i>{{ snap.saved_at or '-' }}
+                &nbsp;&middot;&nbsp;
+                <i class="fas fa-user"></i>disimpan oleh <strong style="color:var(--text);">{{ snap.saved_by or '-' }}</strong>
+              </div>
+            </div>
+            <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+              <a href="/dashboard?snapshot={{ snap.id }}" class="btn btn-sm" style="background:rgba(88,166,255,0.12);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);border-radius:7px;white-space:nowrap;">
+                <i class="fas fa-eye me-1"></i> Lihat
+              </a>
+              <form method="POST" action="/delete-snapshot/{{ snap.id }}" onsubmit="return confirm('Hapus snapshot ini?');" style="margin:0;">
+                <button type="submit" class="btn btn-sm" style="background:rgba(233,69,96,0.1);color:#e94560;border:1px solid rgba(233,69,96,0.25);border-radius:7px;">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {% if snap.filename %}
+          <div class="filename">
+            <i class="fas fa-file-excel" style="color:#2dce89;"></i>
+            {{ snap.filename }}
+          </div>
+          {% endif %}
+
+          <!-- Mini IIRS summary -->
+          {% if snap.iirs %}
+          <div class="d-flex gap-2 flex-wrap">
+            {% for item in snap.iirs %}
+            <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.35rem 0.75rem;font-size:0.78rem;">
+              <span style="color:var(--muted);">{{ item.cluster }}:</span>
+              <strong style="color:
+                {% if item.iirs < 35 %}#2dce89
+                {% elif item.iirs < 60 %}#ffc107
+                {% else %}#ff6b6b{% endif %};">
+                {{ '%.2f'|format(item.iirs) }}
+              </strong>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="empty-state">
+      <div class="empty-icon"><i class="fas fa-history"></i></div>
+      <h5>Belum ada snapshot tersimpan</h5>
+      <p>Simpan dashboard dari halaman utama menggunakan tombol <strong>"Simpan Dashboard"</strong> di sidebar untuk membuat snapshot pertama.</p>
+      <a href="/dashboard" class="btn mt-3" style="background:rgba(88,166,255,0.12);color:#58a6ff;border:1px solid rgba(88,166,255,0.3);border-radius:8px;">
+        <i class="fas fa-arrow-left me-1"></i> Kembali ke Dashboard
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

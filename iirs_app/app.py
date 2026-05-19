@@ -115,19 +115,48 @@ def save_data(new_data):
         pass  # disk write gagal tidak masalah, cache tetap update
 
 # ── History helpers ─────────────────────────────────────────────────────────
+RETENTION_DAYS = 7  # snapshot otomatis dihapus setelah 7 hari
+
+def _prune_history(history):
+    """Buang snapshot lebih lama dari RETENTION_DAYS hari."""
+    from datetime import timedelta
+    cutoff = datetime.now() - timedelta(days=RETENTION_DAYS)
+    kept = []
+    for snap in history:
+        iso = snap.get('saved_at_iso')
+        if not iso:
+            # Snapshot lama tanpa timestamp ISO → simpan saja (backward compat)
+            kept.append(snap)
+            continue
+        try:
+            if datetime.fromisoformat(iso) >= cutoff:
+                kept.append(snap)
+        except (ValueError, TypeError):
+            kept.append(snap)
+    return kept
+
 def load_history():
     if os.path.exists(HISTORY_FILE):
         try:
             with open(HISTORY_FILE) as f:
-                return json.load(f)
+                history = json.load(f)
         except Exception:
-            pass
+            return []
+        pruned = _prune_history(history)
+        if len(pruned) != len(history):
+            # Persist hasil cleanup
+            try:
+                with open(HISTORY_FILE, 'w') as f:
+                    json.dump(pruned, f, indent=2, ensure_ascii=False)
+            except Exception:
+                pass
+        return pruned
     return []
 
 def save_history(snap):
     history = load_history()
     history.insert(0, snap)
-    history = history[:20]  # max 20 entri terbaru
+    history = _prune_history(history)[:20]  # max 20 entri & dalam retensi
     try:
         with open(HISTORY_FILE, 'w') as f:
             json.dump(history, f, indent=2, ensure_ascii=False)
@@ -466,9 +495,11 @@ def save_snapshot():
         return err
 
     data = load_data()
+    now = datetime.now()
     snap = {
         'id':           str(uuid.uuid4()),
-        'saved_at':     datetime.now().strftime('%d %b %Y, %H:%M WIB'),
+        'saved_at':     now.strftime('%d %b %Y, %H:%M WIB'),
+        'saved_at_iso': now.isoformat(),
         'saved_by':     current_user(),
         'periode_bulan': data.get('periode_bulan'),
         'periode_tahun': data.get('periode_tahun'),
