@@ -430,6 +430,15 @@ def dashboard():
     tiers_active = sorted({c['tier'] for c in cluster_tiers}) if cluster_tiers else [1]
     avg_iirs = (sum(r['iirs'] for r in iirs_list) / len(iirs_list)) if iirs_list else 0
 
+    # Breakdown indikator NS/VA/ER rata-rata per kanal (internal vs eksternal)
+    sentrix_list = data.get('sentrix', [])
+    nolimit_list = data.get('nolimit', [])
+    def avg_field(lst, field):
+        vals = [r.get(field, 0) for r in lst]
+        return round(sum(vals) / len(vals), 3) if vals else 0
+    breakdown_internal = [avg_field(sentrix_list, 'ns'), avg_field(sentrix_list, 'va'), avg_field(sentrix_list, 'er')]
+    breakdown_external = [avg_field(nolimit_list, 'ns'), avg_field(nolimit_list, 'va'), avg_field(nolimit_list, 'er')]
+
     return render_template(
         'dashboard.html',
         user=current_user(),
@@ -455,6 +464,8 @@ def dashboard():
         chart_sentrix=json.dumps([r['score_sentrix'] for r in iirs_list]),
         chart_nolimit=json.dumps([r['score_nolimit'] for r in iirs_list]),
         chart_iirs   =json.dumps([round(r['iirs'], 2) for r in iirs_list]),
+        chart_breakdown_internal=json.dumps(breakdown_internal),
+        chart_breakdown_external=json.dumps(breakdown_external),
     )
 
 # Upload: hanya role 'uploader'

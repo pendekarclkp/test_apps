@@ -460,7 +460,8 @@
           <div class="panel">
             <div class="panel-header">
               <i class="fas fa-chart-pie" style="color:#a78bfa"></i>
-              <h6>Distribusi IIRS</h6>
+              <h6>Breakdown Indikator</h6>
+              <small class="ms-auto" style="color:var(--muted);">Internal vs Eksternal</small>
             </div>
             <div class="panel-body">
               <div class="chart-wrap">
@@ -998,6 +999,8 @@
   const sentrixData = {{ chart_sentrix|safe }};
   const nolimitData = {{ chart_nolimit|safe }};
   const iirsData = {{ chart_iirs|safe }};
+  const breakdownInternal = {{ chart_breakdown_internal|safe }};
+  const breakdownExternal = {{ chart_breakdown_external|safe }};
 
   const chartDefaults = {
     plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
@@ -1050,19 +1053,20 @@
     }
   });
 
-  // Radar chart (overview)
+  // Radar chart (overview) — breakdown indikator NS/VA/ER per kanal
   new Chart(document.getElementById('radarChart'), {
     type: 'radar',
     data: {
-      labels,
+      labels: ['NS (Sentimen)', 'VA (Volume Atensi)', 'ER (Engagement)'],
       datasets: [
-        { label: 'IIRS', data: iirsData, backgroundColor: 'rgba(167,139,250,0.2)', borderColor: '#a78bfa', pointBackgroundColor: '#a78bfa' },
+        { label: 'Internal (Sentrix)', data: breakdownInternal, backgroundColor: 'rgba(88,166,255,0.2)', borderColor: '#58a6ff', pointBackgroundColor: '#58a6ff' },
+        { label: 'Eksternal (No Limit)', data: breakdownExternal, backgroundColor: 'rgba(253,126,20,0.15)', borderColor: '#fd7e14', pointBackgroundColor: '#fd7e14' },
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
-      scales: { r: { grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#8b949e', backdropColor: 'transparent' }, pointLabels: { color: '#8b949e' } } }
+      scales: { r: { suggestedMin: 0, suggestedMax: 1, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#8b949e', backdropColor: 'transparent', stepSize: 0.2 }, pointLabels: { color: '#8b949e', font: { size: 10 } } } }
     }
   });
 
