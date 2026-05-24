@@ -1016,20 +1016,20 @@
     }
   };
 
-  // Line chart (overview) — NS/VA/ER per vendor
+  // Bar chart (overview) — NS/VA/ER per vendor (grouped)
   new Chart(document.getElementById('barChart'), {
-    type: 'line',
+    type: 'bar',
     data: {
       labels,
       datasets: [
         // Sentrix (biru)
-        { label: 'NS — Sentrix',  data: sxNS, borderColor: 'rgba(88,166,255,0.9)',  backgroundColor: 'rgba(88,166,255,0.9)',  pointRadius: 4, borderWidth: 2, tension: 0.3 },
-        { label: 'VA — Sentrix',  data: sxVA, borderColor: 'rgba(88,166,255,0.6)',  backgroundColor: 'rgba(88,166,255,0.6)',  pointRadius: 4, borderWidth: 2, borderDash: [5,3], tension: 0.3 },
-        { label: 'ER — Sentrix',  data: sxER, borderColor: 'rgba(88,166,255,0.4)',  backgroundColor: 'rgba(88,166,255,0.4)',  pointRadius: 4, borderWidth: 2, borderDash: [2,2], tension: 0.3 },
+        { label: 'NS — Sentrix',  data: sxNS, backgroundColor: 'rgba(88,166,255,0.9)',  borderWidth: 0, borderRadius: 4 },
+        { label: 'VA — Sentrix',  data: sxVA, backgroundColor: 'rgba(88,166,255,0.6)',  borderWidth: 0, borderRadius: 4 },
+        { label: 'ER — Sentrix',  data: sxER, backgroundColor: 'rgba(88,166,255,0.35)', borderWidth: 0, borderRadius: 4 },
         // No Limit (oranye)
-        { label: 'NS — No Limit', data: nlNS, borderColor: 'rgba(253,126,20,0.9)', backgroundColor: 'rgba(253,126,20,0.9)', pointRadius: 4, borderWidth: 2, tension: 0.3 },
-        { label: 'VA — No Limit', data: nlVA, borderColor: 'rgba(253,126,20,0.6)', backgroundColor: 'rgba(253,126,20,0.6)', pointRadius: 4, borderWidth: 2, borderDash: [5,3], tension: 0.3 },
-        { label: 'ER — No Limit', data: nlER, borderColor: 'rgba(253,126,20,0.4)', backgroundColor: 'rgba(253,126,20,0.4)', pointRadius: 4, borderWidth: 2, borderDash: [2,2], tension: 0.3 },
+        { label: 'NS — No Limit', data: nlNS, backgroundColor: 'rgba(253,126,20,0.9)',  borderWidth: 0, borderRadius: 4 },
+        { label: 'VA — No Limit', data: nlVA, backgroundColor: 'rgba(253,126,20,0.6)',  borderWidth: 0, borderRadius: 4 },
+        { label: 'ER — No Limit', data: nlER, backgroundColor: 'rgba(253,126,20,0.35)', borderWidth: 0, borderRadius: 4 },
       ]
     },
     options: {
