@@ -836,7 +836,6 @@
                 <th>Score Sentrix (60%)</th>
                 <th>IIRS Score</th>
                 <th>Kategori</th>
-                <th>Status</th>
               </tr>
             </thead>
             <tbody>
@@ -867,17 +866,6 @@
                   </div>
                 </td>
                 <td><span class="badge-{{ row.color }}">{{ row.kategori }}</span></td>
-                <td>
-                  {% if row.color == 'success' %}
-                    <i class="fas fa-check-circle" style="color:#2dce89"></i> Normal
-                  {% elif row.color == 'warning' %}
-                    <i class="fas fa-exclamation-circle" style="color:#ffc107"></i> Waspada
-                  {% elif row.color == 'orange' %}
-                    <i class="fas fa-exclamation-triangle" style="color:#fd7e14"></i> Siaga
-                  {% else %}
-                    <i class="fas fa-skull-crossbones" style="color:#ff6b6b"></i> Krisis
-                  {% endif %}
-                </td>
               </tr>
               {% endfor %}
             </tbody>
