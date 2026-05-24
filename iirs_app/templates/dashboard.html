@@ -418,7 +418,16 @@
       <div class="row g-3 mb-4">
         {% for row in iirs_data %}
         <div class="col-md-4">
-          <div class="stat-card">
+          <div class="stat-card" style="border-left: 4px solid
+            {% if row.color == 'success' %}#2dce89
+            {% elif row.color == 'warning' %}#ffc107
+            {% elif row.color == 'orange' %}#fd7e14
+            {% else %}#ff6b6b{% endif %};
+            background: linear-gradient(135deg, var(--card-bg),
+            {% if row.color == 'success' %}rgba(45,206,137,0.06)
+            {% elif row.color == 'warning' %}rgba(255,193,7,0.06)
+            {% elif row.color == 'orange' %}rgba(253,126,20,0.06)
+            {% else %}rgba(255,107,107,0.06){% endif %});">
             <div class="label">{{ row.cluster }}</div>
             <div class="value iirs-{{ row.color }}">{{ '%.2f'|format(row.iirs) }}</div>
             <div class="sub">IIRS Score</div>
@@ -431,13 +440,14 @@
         {% endfor %}
       </div>
 
-      <!-- Chart row -->
-      <div class="row g-3 mb-4">
+      <!-- Chart row: Source Score -->
+      <div class="row g-3 mb-3">
         <div class="col-lg-8">
           <div class="panel">
             <div class="panel-header">
               <i class="fas fa-chart-bar" style="color:var(--accent2)"></i>
               <h6>Perbandingan Score per Klaster</h6>
+              <small class="ms-auto" style="color:var(--muted);">Sentrix & No Limit</small>
             </div>
             <div class="panel-body">
               <div class="chart-wrap">
@@ -455,6 +465,24 @@
             <div class="panel-body">
               <div class="chart-wrap">
                 <canvas id="radarChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart row: IIRS result -->
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <div class="panel">
+            <div class="panel-header">
+              <i class="fas fa-wave-square" style="color:#a78bfa"></i>
+              <h6>Hasil IIRS per Klaster</h6>
+              <small class="ms-auto" style="color:var(--muted);">Hasil perhitungan (0.4 × NoLimit) + (0.6 × Sentrix)</small>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap" style="height:200px;">
+                <canvas id="iirsResultChart"></canvas>
               </div>
             </div>
           </div>
@@ -979,7 +1007,7 @@
     }
   };
 
-  // Bar chart (overview)
+  // Bar chart (overview) — Source scores only
   new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
@@ -987,10 +1015,39 @@
       datasets: [
         { label: 'Score NoLimit', data: nolimitData, backgroundColor: 'rgba(253,126,20,0.7)', borderColor: '#fd7e14', borderWidth: 1, borderRadius: 6 },
         { label: 'Score Sentrix', data: sentrixData, backgroundColor: 'rgba(88,166,255,0.7)', borderColor: '#58a6ff', borderWidth: 1, borderRadius: 6 },
-        { label: 'IIRS', data: iirsData, backgroundColor: 'rgba(167,139,250,0.7)', borderColor: '#a78bfa', borderWidth: 1, borderRadius: 6 },
       ]
     },
-    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false, plugins: { ...chartDefaults.plugins, title: { display: false } } }
+    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false }
+  });
+
+  // IIRS result chart — per-bar color based on value
+  const iirsBarColors = iirsData.map(v => v < 35 ? 'rgba(45,206,137,0.8)' : v < 50 ? 'rgba(255,193,7,0.8)' : v < 60 ? 'rgba(253,126,20,0.8)' : 'rgba(255,107,107,0.8)');
+  const iirsBorderColors = iirsData.map(v => v < 35 ? '#2dce89' : v < 50 ? '#ffc107' : v < 60 ? '#fd7e14' : '#ff6b6b');
+  new Chart(document.getElementById('iirsResultChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'IIRS',
+        data: iirsData,
+        backgroundColor: iirsBarColors,
+        borderColor: iirsBorderColors,
+        borderWidth: 1,
+        borderRadius: 8,
+      }]
+    },
+    options: {
+      ...chartDefaults, responsive: true, maintainAspectRatio: false,
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' }, min: 0, max: 100,
+          afterDataLimits(axis) { axis.max = 100; } }
+      }
+    }
   });
 
   // Radar chart (overview)
