@@ -9,13 +9,15 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg: #0d1117;
-      --card-bg: #161b22;
-      --border: rgba(255,255,255,0.08);
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --accent: #e94560;
-      --accent2: #58a6ff;
+      --bg: #F5F6FA;
+      --card-bg: #FFFFFF;
+      --border: #E0E6EF;
+      --text: #2C3E50;
+      --muted: #7F8C8D;
+      --accent: #C41230;
+      --accent2: #3498DB;
+      --bi-red-dark: #8B0D21;
+      --bi-red-light: #E8374F;
     }
     body {
       background: var(--bg);
@@ -27,16 +29,25 @@
     .sidebar {
       width: 260px;
       min-height: 100vh;
-      background: var(--card-bg);
+      background: linear-gradient(160deg, var(--bi-red-dark) 0%, var(--accent) 60%, var(--bi-red-light) 100%);
       border-right: 1px solid var(--border);
       position: fixed;
       top: 0; left: 0;
       padding: 1.5rem 0;
       z-index: 100;
+      box-shadow: 2px 0 16px rgba(196,18,48,0.25);
     }
     .sidebar-logo {
       padding: 0 1.5rem 1.5rem;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .sidebar-logo .icon { background: rgba(255,255,255,0.18) !important; }
+    .nav-section { color: rgba(255,255,255,0.6) !important; }
+    .nav-link-item { color: rgba(255,255,255,0.78); }
+    .nav-link-item:hover, .nav-link-item.active {
+      color: #fff;
+      background: rgba(255,255,255,0.15);
+      border-left: 3px solid #fff;
     }
     .sidebar-logo .icon {
       width: 44px; height: 44px;
@@ -47,7 +58,7 @@
       margin-bottom: 0.75rem;
     }
     .sidebar-logo h6 { color: #fff; font-weight: 700; margin: 0; font-size: 0.95rem; }
-    .sidebar-logo p { color: var(--muted); font-size: 0.72rem; margin: 0; }
+    .sidebar-logo p { color: rgba(255,255,255,0.65); font-size: 0.72rem; margin: 0; }
     .nav-section {
       padding: 1rem 1.5rem 0.25rem;
       font-size: 0.7rem;
@@ -59,7 +70,7 @@
     .nav-link-item {
       display: flex; align-items: center; gap: 0.75rem;
       padding: 0.6rem 1.5rem;
-      color: var(--muted);
+      color: rgba(255,255,255,0.78);
       text-decoration: none;
       font-size: 0.88rem;
       border-radius: 0;
@@ -68,8 +79,8 @@
     }
     .nav-link-item:hover, .nav-link-item.active {
       color: #fff;
-      background: rgba(255,255,255,0.05);
-      border-left: 3px solid var(--accent);
+      background: rgba(255,255,255,0.15);
+      border-left: 3px solid #fff;
     }
     .nav-link-item i { width: 18px; text-align: center; }
 
@@ -318,6 +329,46 @@
       .main-content { margin-left: 0; }
     }
     .section-hidden { display: none; }
+
+    /* ── LIGHT THEME OVERRIDES ── */
+    .panel { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .stat-card { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .stat-card:hover { box-shadow: 0 10px 26px rgba(0,0,0,0.12); }
+    .topbar { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .user-chip { background: rgba(0,0,0,0.04); }
+    .user-chip .avatar { background: linear-gradient(135deg, var(--accent), var(--bi-red-dark)); }
+    .table-dark-custom th { background: #F8F9FB; }
+    .table-dark-custom td { border-bottom: 1px solid var(--border); }
+    .table-dark-custom tr:hover td { background: #F8F9FB; }
+    .score-bar { background: rgba(0,0,0,0.08); }
+    .playbook-card { background: #F8F9FB; }
+    .playbook-card:hover { background: #F1F3F7; border-color: var(--border); }
+    .ews-item { background: #F8F9FB; }
+    .tl-table td { border-bottom: 1px solid var(--border); }
+    .tl-table tr:hover td { background: #F8F9FB; }
+    .tl-tier1, .tl-tier2, .tl-tier3 { color: var(--muted); }
+    .tl-tier1.active-tier { color: var(--text); background: rgba(39,174,96,0.08); }
+    .tl-tier2.active-tier { color: var(--text); background: rgba(243,156,18,0.08); }
+    .tl-tier3.active-tier { color: var(--text); background: rgba(192,57,43,0.08); }
+    .tl-th-tier1 { background: rgba(39,174,96,0.14); color: #1E8449; }
+    .tl-th-tier2 { background: rgba(243,156,18,0.14); color: #B7770D; }
+    .tl-th-tier3 { background: rgba(192,57,43,0.14); color: #C0392B; }
+
+    /* Badges readable on light bg */
+    .badge-ringan { background: #EBF9F1; color: #1E8449; border-color: #ABEBC6; }
+    .badge-sedang { background: #FEF6E0; color: #B7770D; border-color: #FAD7A0; }
+    .badge-orange { background: #FDEBD0; color: #C0392B; border-color: #F5CBA7; }
+    .badge-danger { background: #FDEDEC; color: #C0392B; border-color: #F5B7B1; }
+
+    /* IIRS value colors on light bg */
+    .iirs-ringan { color: #1E8449; }
+    .iirs-sedang { color: #B7770D; }
+    .iirs-orange { color: #D35400; }
+    .iirs-danger { color: #C0392B; }
+
+    .scale-line-label { color: var(--text); }
+    .zone-chip { color: #fff; }
+    .signal-card.info { border-left-color: var(--accent2); }
   </style>
 </head>
 <body>
@@ -387,8 +438,8 @@
           </small>
         </div>
         {% if periode_bulan and periode_tahun %}
-        <div style="background:linear-gradient(135deg,rgba(233,69,96,0.15),rgba(15,52,96,0.3));border:1px solid rgba(233,69,96,0.35);border-radius:10px;padding:0.4rem 1rem;display:flex;align-items:center;gap:0.5rem;">
-          <i class="fas fa-calendar-alt" style="color:#e94560;font-size:0.85rem;"></i>
+        <div style="background:linear-gradient(135deg,var(--accent),var(--bi-red-dark));border:1px solid var(--bi-red-dark);border-radius:10px;padding:0.4rem 1rem;display:flex;align-items:center;gap:0.5rem;">
+          <i class="fas fa-calendar-alt" style="color:#fff;font-size:0.85rem;"></i>
           <span style="color:#fff;font-weight:700;font-size:0.92rem;">{{ periode_bulan }} {{ periode_tahun }}</span>
         </div>
         {% endif %}
@@ -429,13 +480,13 @@
       <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
         <div>
           {% if periode_bulan and periode_tahun %}
-          <div style="display:inline-flex;align-items:center;gap:0.6rem;background:linear-gradient(135deg,rgba(233,69,96,0.12),rgba(15,52,96,0.25));border:1px solid rgba(233,69,96,0.3);border-radius:12px;padding:0.55rem 1.25rem;">
-            <i class="fas fa-calendar-alt" style="color:#e94560;"></i>
-            <span style="color:rgba(255,255,255,0.6);font-size:0.8rem;">Periode Data:</span>
+          <div style="display:inline-flex;align-items:center;gap:0.6rem;background:linear-gradient(135deg,var(--accent),var(--bi-red-dark));border:1px solid var(--bi-red-dark);border-radius:12px;padding:0.55rem 1.25rem;box-shadow:0 2px 8px rgba(196,18,48,0.25);">
+            <i class="fas fa-calendar-alt" style="color:#fff;"></i>
+            <span style="color:rgba(255,255,255,0.8);font-size:0.8rem;">Periode Data:</span>
             <span style="color:#fff;font-weight:700;font-size:1.05rem;letter-spacing:0.3px;">{{ periode_bulan }} {{ periode_tahun }}</span>
           </div>
           {% else %}
-          <div style="display:inline-flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.55rem 1.25rem;">
+          <div style="display:inline-flex;align-items:center;gap:0.6rem;background:rgba(0,0,0,0.03);border:1px solid var(--border);border-radius:12px;padding:0.55rem 1.25rem;">
             <i class="fas fa-calendar-times" style="color:var(--muted);"></i>
             <span style="color:var(--muted);font-size:0.85rem;">Periode belum tersedia{% if role == 'uploader' %} — <a href="/upload" style="color:#58a6ff;">upload file Excel</a>{% endif %}</span>
           </div>
@@ -912,7 +963,7 @@
         </div>
         <div class="d-flex flex-wrap gap-2">
           {% for c in cluster_tiers %}
-          <div style="background:rgba(255,255,255,0.04);border:1px solid
+          <div style="background:#F8F9FB;border:1px solid
               {% if c.tier == 1 %}rgba(45,206,137,0.4)
               {% elif c.tier == 2 %}rgba(255,193,7,0.4)
               {% else %}rgba(255,107,107,0.4){% endif %};
@@ -953,7 +1004,7 @@
           <table class="tl-table">
             <thead>
               <tr>
-                <th style="color:var(--muted);background:rgba(255,255,255,0.03);min-width:120px;">Aspek</th>
+                <th style="color:var(--muted);background:#F8F9FB;min-width:120px;">Aspek</th>
                 <th class="tl-th-tier1{% if 1 in tiers_active %} active-tier-header{% endif %}" style="min-width:220px;">
                   <div>{{ tindak_lanjut_headers[0] if tindak_lanjut_headers and tindak_lanjut_headers[0] else 'Tier 1 — Ringan (IIRS 0–35)' }}</div>
                   <div style="margin-top:0.4rem;display:flex;flex-wrap:wrap;gap:0.25rem;">
@@ -1026,7 +1077,7 @@
             <div class="panel-body">
               <div class="row g-3">
                 <div class="col-md-5">
-                  <div style="background:rgba(255,255,255,0.03); border-radius:10px; padding:1rem; border:1px solid var(--border);">
+                  <div style="background:#F8F9FB; border-radius:10px; padding:1rem; border:1px solid var(--border);">
                     <div class="d-flex align-items-center gap-2 mb-2">
                       <span style="font-size:1.5rem;">{{ row.playbook.icon }}</span>
                       <div>
@@ -1169,8 +1220,8 @@
   const chartDefaults = {
     plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
     scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
-      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } }
+      x: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#8b949e' } },
+      y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#8b949e' } }
     }
   };
 
@@ -1194,8 +1245,8 @@
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 12 } } },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' }, min: 0, max: 1 }
+        x: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#8b949e' } },
+        y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#8b949e' }, min: 0, max: 1 }
       }
     }
   });
@@ -1223,8 +1274,8 @@
         legend: { display: false }
       },
       scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' }, min: 0, max: 100,
+        x: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#8b949e' } },
+        y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#8b949e' }, min: 0, max: 100,
           afterDataLimits(axis) { axis.max = 100; } }
       }
     }
@@ -1254,7 +1305,7 @@
     const color = v < 35 ? '#2dce89' : v < 50 ? '#ffc107' : v < 60 ? '#fd7e14' : '#ff6b6b';
     new Chart(el, {
       type: 'doughnut',
-      data: { datasets: [{ data: [v, Math.max(0, 100 - v)], backgroundColor: [color, 'rgba(255,255,255,0.06)'], borderWidth: 0 }] },
+      data: { datasets: [{ data: [v, Math.max(0, 100 - v)], backgroundColor: [color, 'rgba(0,0,0,0.07)'], borderWidth: 0 }] },
       options: {
         responsive: true, maintainAspectRatio: false,
         circumference: 270, rotation: -135, cutout: '70%',
@@ -1271,7 +1322,7 @@
       tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.raw * 100).toFixed(1) + '%' } } },
     scales: {
       x: { grid: { display: false }, ticks: { color: '#8b949e' } },
-      y: { min: 0, max: 1.05, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e', callback: v => Math.round(v * 100) + '%' } }
+      y: { min: 0, max: 1.05, grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { color: '#8b949e', callback: v => Math.round(v * 100) + '%' } }
     }
   };
   new Chart(document.getElementById('chartSentrix'), {
@@ -1309,7 +1360,7 @@
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 10 } } },
-      scales: { r: { min: 0, suggestedMax: 100, grid: { color: 'rgba(255,255,255,0.1)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#8b949e', font: { size: 10 } }, ticks: { display: false } } }
+      scales: { r: { min: 0, suggestedMax: 100, grid: { color: 'rgba(0,0,0,0.08)' }, angleLines: { color: 'rgba(0,0,0,0.08)' }, pointLabels: { color: '#8b949e', font: { size: 10 } }, ticks: { display: false } } }
     }
   });
 
@@ -1374,8 +1425,8 @@
       data: {
         datasets: [{
           data: [v, Math.max(0, 100 - v)],
-          backgroundColor: [color, 'rgba(255,255,255,0.06)'],
-          borderColor: [color, 'rgba(255,255,255,0.08)'],
+          backgroundColor: [color, 'rgba(0,0,0,0.07)'],
+          borderColor: [color, 'rgba(0,0,0,0.1)'],
           borderWidth: 1,
         }]
       },
