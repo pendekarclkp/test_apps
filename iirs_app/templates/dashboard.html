@@ -797,7 +797,7 @@
               <tr>
                 <th style="color:var(--muted);background:rgba(255,255,255,0.03);min-width:120px;">Aspek</th>
                 <th class="tl-th-tier1{% if 1 in tiers_active %} active-tier-header{% endif %}" style="min-width:220px;">
-                  <div>Tier 1 — Ringan (IIRS 0–35)</div>
+                  <div>{{ tindak_lanjut_headers[0] if tindak_lanjut_headers and tindak_lanjut_headers[0] else 'Tier 1 — Ringan (IIRS 0–35)' }}</div>
                   <div style="margin-top:0.4rem;display:flex;flex-wrap:wrap;gap:0.25rem;">
                     {% for c in cluster_tiers if c.tier == 1 %}
                     <span style="font-size:0.7rem;font-weight:700;background:rgba(45,206,137,0.2);color:#2dce89;padding:0.15rem 0.5rem;border-radius:5px;text-transform:none;letter-spacing:0;">
@@ -809,7 +809,7 @@
                   </div>
                 </th>
                 <th class="tl-th-tier2{% if 2 in tiers_active %} active-tier-header{% endif %}" style="min-width:220px;">
-                  <div>Tier 2 — Sedang (IIRS 36–59)</div>
+                  <div>{{ tindak_lanjut_headers[1] if tindak_lanjut_headers and tindak_lanjut_headers[1] else 'Tier 2 — Sedang (IIRS 36–59)' }}</div>
                   <div style="margin-top:0.4rem;display:flex;flex-wrap:wrap;gap:0.25rem;">
                     {% for c in cluster_tiers if c.tier == 2 %}
                     <span style="font-size:0.7rem;font-weight:700;background:rgba(255,193,7,0.2);color:#ffc107;padding:0.15rem 0.5rem;border-radius:5px;text-transform:none;letter-spacing:0;">
@@ -821,7 +821,7 @@
                   </div>
                 </th>
                 <th class="tl-th-tier3{% if 3 in tiers_active %} active-tier-header{% endif %}" style="min-width:220px;">
-                  <div>Tier 3 — Crisis (IIRS ≥60)</div>
+                  <div>{{ tindak_lanjut_headers[2] if tindak_lanjut_headers and tindak_lanjut_headers[2] else 'Tier 3 — Crisis (IIRS ≥60)' }}</div>
                   <div style="margin-top:0.4rem;display:flex;flex-wrap:wrap;gap:0.25rem;">
                     {% for c in cluster_tiers if c.tier == 3 %}
                     <span style="font-size:0.7rem;font-weight:700;background:rgba(255,107,107,0.2);color:#ff6b6b;padding:0.15rem 0.5rem;border-radius:5px;text-transform:none;letter-spacing:0;">

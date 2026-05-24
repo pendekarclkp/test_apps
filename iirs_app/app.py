@@ -192,15 +192,18 @@ def extract_period(wb):
     return None, None
 
 def parse_tindak_lanjut(ws):
-    """Parse sheet Tindak Lanjut menjadi list dict aspek/tier1/tier2/tier3.
+    """Parse sheet Tindak Lanjut menjadi dict {headers, rows}.
+    headers = label kolom tier dari baris header sheet.
     Row dengan kolom A = None adalah lanjutan aspek sebelumnya — gabung dengan newline.
     """
     result = []
     current = None
+    headers = []
 
     for row in ws.iter_rows(values_only=True):
-        # Skip header row
+        # Baris header — ambil label tier dari kolom B/C/D
         if row[0] and str(row[0]).strip().lower() in ('aspek',):
+            headers = [str(row[i]).strip() if row[i] is not None else '' for i in range(1, 4)]
             continue
 
         aspek = row[0]
@@ -231,7 +234,7 @@ def parse_tindak_lanjut(ws):
     if current is not None:
         result.append(current)
 
-    return result
+    return {'headers': headers, 'rows': result}
 
 def parse_excel(filepath):
     wb = openpyxl.load_workbook(filepath, data_only=True)
@@ -306,13 +309,17 @@ def parse_excel(filepath):
 
     # Parse sheet Tindak Lanjut (opsional)
     tindak_lanjut = []
+    tindak_lanjut_headers = []
     if 'Tindak Lanjut' in wb.sheetnames:
         try:
-            tindak_lanjut = parse_tindak_lanjut(wb['Tindak Lanjut'])
+            parsed = parse_tindak_lanjut(wb['Tindak Lanjut'])
+            tindak_lanjut = parsed['rows']
+            tindak_lanjut_headers = parsed['headers']
         except Exception:
             tindak_lanjut = []
+            tindak_lanjut_headers = []
 
-    return sentrix, nolimit, iirs, periode_bulan, periode_tahun, tindak_lanjut
+    return sentrix, nolimit, iirs, periode_bulan, periode_tahun, tindak_lanjut, tindak_lanjut_headers
 
 def get_kategori(iirs_val):
     if iirs_val < 35:
@@ -397,11 +404,13 @@ def dashboard():
         data         = snap_data
         iirs_list    = snap_data.get('iirs', [])
         tindak_lanjut = snap_data.get('tindak_lanjut', [])
+        tindak_lanjut_headers = snap_data.get('tindak_lanjut_headers', [])
         is_snapshot  = True
     else:
         data         = load_data()
         iirs_list    = data['iirs']
         tindak_lanjut = data.get('tindak_lanjut', [])
+        tindak_lanjut_headers = data.get('tindak_lanjut_headers', [])
         is_snapshot  = False
         snap_id      = None
 
@@ -461,6 +470,7 @@ def dashboard():
         periode_bulan=data.get('periode_bulan'),
         periode_tahun=data.get('periode_tahun'),
         tindak_lanjut=tindak_lanjut,
+        tindak_lanjut_headers=tindak_lanjut_headers,
         active_tier=active_tier,
         cluster_tiers=cluster_tiers,
         tiers_active=tiers_active,
@@ -500,12 +510,13 @@ def upload_page():
             save_path = os.path.join(UPLOAD_FOLDER, 'latest.xlsx')
             f.save(save_path)
             try:
-                sentrix, nolimit, iirs, periode_bulan, periode_tahun, tindak_lanjut = parse_excel(save_path)
+                sentrix, nolimit, iirs, periode_bulan, periode_tahun, tindak_lanjut, tindak_lanjut_headers = parse_excel(save_path)
                 new_data = {
                     'sentrix':        sentrix,
                     'nolimit':        nolimit,
                     'iirs':           iirs,
                     'tindak_lanjut':  tindak_lanjut,
+                    'tindak_lanjut_headers': tindak_lanjut_headers,
                     'uploaded_at':    datetime.now().strftime('%d %b %Y, %H:%M WIB'),
                     'uploaded_by':    current_user(),
                     'filename':       f.filename,

@@ -103,9 +103,14 @@
       "tier3": "Credibility preservation"
     }
   ],
-  "uploaded_at": "19 May 2026, 02:03 WIB",
+  "tindak_lanjut_headers": [
+    "Tier 1 — Ringan (IIRS 0–35)",
+    "Tier 2 — Sedang (IIRS 36–59)",
+    "Tier 3 — Crisis (IIRS ≥60)"
+  ],
+  "uploaded_at": "24 May 2026, 07:17 WIB",
   "uploaded_by": "uploader",
-  "filename": "april2026.xlsx",
+  "filename": "latest.xlsx",
   "periode_bulan": "April",
   "periode_tahun": "2026"
 }
