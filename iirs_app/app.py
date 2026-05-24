@@ -464,6 +464,12 @@ def dashboard():
         chart_sentrix=json.dumps([r['score_sentrix'] for r in iirs_list]),
         chart_nolimit=json.dumps([r['score_nolimit'] for r in iirs_list]),
         chart_iirs   =json.dumps([round(r['iirs'], 2) for r in iirs_list]),
+        chart_sentrix_ns=json.dumps([round(r.get('ns',0)*40, 3) for r in sentrix_list]),
+        chart_sentrix_va=json.dumps([round(r.get('va',0)*30, 3) for r in sentrix_list]),
+        chart_sentrix_er=json.dumps([round(r.get('er',0)*30, 3) for r in sentrix_list]),
+        chart_nolimit_ns=json.dumps([round(r.get('ns',0)*40, 3) for r in nolimit_list]),
+        chart_nolimit_va=json.dumps([round(r.get('va',0)*30, 3) for r in nolimit_list]),
+        chart_nolimit_er=json.dumps([round(r.get('er',0)*30, 3) for r in nolimit_list]),
         chart_breakdown_internal=json.dumps(breakdown_internal),
         chart_breakdown_external=json.dumps(breakdown_external),
     )

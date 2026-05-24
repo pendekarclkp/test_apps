@@ -447,7 +447,7 @@
             <div class="panel-header">
               <i class="fas fa-chart-bar" style="color:var(--accent2)"></i>
               <h6>Perbandingan Score per Klaster</h6>
-              <small class="ms-auto" style="color:var(--muted);">Sentrix & No Limit</small>
+              <small class="ms-auto" style="color:var(--muted);">NS · VA · ER → Source Score → IIRS</small>
             </div>
             <div class="panel-body">
               <div class="chart-wrap">
@@ -1001,6 +1001,12 @@
   const iirsData = {{ chart_iirs|safe }};
   const breakdownInternal = {{ chart_breakdown_internal|safe }};
   const breakdownExternal = {{ chart_breakdown_external|safe }};
+  const sxNS = {{ chart_sentrix_ns|safe }};
+  const sxVA = {{ chart_sentrix_va|safe }};
+  const sxER = {{ chart_sentrix_er|safe }};
+  const nlNS = {{ chart_nolimit_ns|safe }};
+  const nlVA = {{ chart_nolimit_va|safe }};
+  const nlER = {{ chart_nolimit_er|safe }};
 
   const chartDefaults = {
     plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
@@ -1010,17 +1016,32 @@
     }
   };
 
-  // Bar chart (overview) — Source scores only
+  // Bar chart (overview) — stacked NS/VA/ER per vendor → Source Score + IIRS line
   new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: 'Score NoLimit', data: nolimitData, backgroundColor: 'rgba(253,126,20,0.7)', borderColor: '#fd7e14', borderWidth: 1, borderRadius: 6 },
-        { label: 'Score Sentrix', data: sentrixData, backgroundColor: 'rgba(88,166,255,0.7)', borderColor: '#58a6ff', borderWidth: 1, borderRadius: 6 },
+        // Sentrix stack
+        { label: 'NS — Sentrix',  data: sxNS, backgroundColor: 'rgba(88,166,255,0.85)', borderColor: 'rgba(88,166,255,0)',  borderWidth: 0, stack: 'sentrix' },
+        { label: 'VA — Sentrix',  data: sxVA, backgroundColor: 'rgba(88,166,255,0.55)', borderColor: 'rgba(88,166,255,0)',  borderWidth: 0, stack: 'sentrix' },
+        { label: 'ER — Sentrix',  data: sxER, backgroundColor: 'rgba(88,166,255,0.30)', borderColor: 'rgba(88,166,255,0)',  borderWidth: 0, stack: 'sentrix' },
+        // No Limit stack
+        { label: 'NS — No Limit', data: nlNS, backgroundColor: 'rgba(253,126,20,0.85)', borderColor: 'rgba(253,126,20,0)', borderWidth: 0, stack: 'nolimit' },
+        { label: 'VA — No Limit', data: nlVA, backgroundColor: 'rgba(253,126,20,0.55)', borderColor: 'rgba(253,126,20,0)', borderWidth: 0, stack: 'nolimit' },
+        { label: 'ER — No Limit', data: nlER, backgroundColor: 'rgba(253,126,20,0.30)', borderColor: 'rgba(253,126,20,0)', borderWidth: 0, stack: 'nolimit' },
+        // IIRS line
+        { label: 'IIRS', data: iirsData, type: 'line', borderColor: '#a78bfa', backgroundColor: 'rgba(167,139,250,0.1)', pointBackgroundColor: '#a78bfa', pointRadius: 5, borderWidth: 2, tension: 0.3, yAxisID: 'y', order: -1 },
       ]
     },
-    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 12 } } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
+        y: { stacked: false, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' }, max: 60 }
+      }
+    }
   });
 
   // IIRS result chart — per-bar color based on value
