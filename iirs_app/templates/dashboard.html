@@ -29,13 +29,13 @@
     .sidebar {
       width: 260px;
       min-height: 100vh;
-      background: linear-gradient(160deg, var(--bi-red-dark) 0%, var(--accent) 60%, var(--bi-red-light) 100%);
+      background: linear-gradient(160deg, #0a2540 0%, #1565C0 60%, #2196F3 100%);
       border-right: 1px solid var(--border);
       position: fixed;
       top: 0; left: 0;
       padding: 1.5rem 0;
       z-index: 100;
-      box-shadow: 2px 0 16px rgba(196,18,48,0.25);
+      box-shadow: 2px 0 16px rgba(21,101,192,0.25);
     }
     .sidebar-logo {
       padding: 0 1.5rem 1.5rem;
@@ -526,37 +526,6 @@
         {% endfor %}
       </div>
 
-      <!-- Skala IIRS -->
-      <div class="panel mb-3">
-        <div class="panel-header">
-          <i class="fas fa-ruler-horizontal" style="color:var(--accent2)"></i>
-          <h6>Skala IIRS — Posisi Keyword pada Kontinum Risiko</h6>
-        </div>
-        <div class="panel-body">
-          <div class="scale-bar-wrap">
-            <div class="scale-bar">
-              <div class="zone-line" style="left:35%"><span class="scale-line-label">35</span></div>
-              <div class="zone-line" style="left:50%"><span class="scale-line-label">50</span></div>
-              <div class="zone-line" style="left:60%"><span class="scale-line-label">60</span></div>
-              {% for row in iirs_data %}
-              {% set pos = row.iirs if row.iirs < 100 else 100 %}
-              {% set mc = '#2dce89' if row.color == 'success' else '#ffc107' if row.color == 'warning' else '#fd7e14' if row.color == 'orange' else '#ff6b6b' %}
-              <div class="scale-marker" style="left:{{ pos }}%; top:{{ loop.index0 * 6 }}px;">
-                <div class="marker-label" style="background:{{ mc }}; top:{{ -22 - loop.index0 * 6 }}px;">{{ row.cluster }} {{ '%.2f'|format(row.iirs) }}</div>
-                <div class="needle" style="background:{{ mc }};"></div>
-              </div>
-              {% endfor %}
-            </div>
-            <div class="scale-zone-labels">
-              <div class="zone-chip" style="flex:35;background:#2dce89;">Ringan (0–35)</div>
-              <div class="zone-chip" style="flex:15;background:#ffc107;">Sedang (36–49)</div>
-              <div class="zone-chip" style="flex:10;background:#fd7e14;">Siaga (50–59)</div>
-              <div class="zone-chip" style="flex:40;background:#ff6b6b;">Crisis (≥60)</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Top row: Gauge + Nilai per keyword -->
       <div class="row g-3 mb-3">
         <div class="col-lg-5">
@@ -590,6 +559,37 @@
               <div class="chart-wrap">
                 <canvas id="barChart"></canvas>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skala IIRS -->
+      <div class="panel mb-3">
+        <div class="panel-header">
+          <i class="fas fa-ruler-horizontal" style="color:var(--accent2)"></i>
+          <h6>Skala IIRS — Posisi Keyword pada Kontinum Risiko</h6>
+        </div>
+        <div class="panel-body">
+          <div class="scale-bar-wrap">
+            <div class="scale-bar">
+              <div class="zone-line" style="left:35%"><span class="scale-line-label">35</span></div>
+              <div class="zone-line" style="left:50%"><span class="scale-line-label">50</span></div>
+              <div class="zone-line" style="left:60%"><span class="scale-line-label">60</span></div>
+              {% for row in iirs_data %}
+              {% set pos = row.iirs if row.iirs < 100 else 100 %}
+              {% set mc = '#2dce89' if row.color == 'success' else '#ffc107' if row.color == 'warning' else '#fd7e14' if row.color == 'orange' else '#ff6b6b' %}
+              <div class="scale-marker" style="left:{{ pos }}%; top:{{ loop.index0 * 6 }}px;">
+                <div class="marker-label" style="background:{{ mc }}; top:{{ -22 - loop.index0 * 6 }}px;">{{ row.cluster }} {{ '%.2f'|format(row.iirs) }}</div>
+                <div class="needle" style="background:{{ mc }};"></div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="scale-zone-labels">
+              <div class="zone-chip" style="flex:35;background:#2dce89;">Ringan (0–35)</div>
+              <div class="zone-chip" style="flex:15;background:#ffc107;">Sedang (36–49)</div>
+              <div class="zone-chip" style="flex:10;background:#fd7e14;">Siaga (50–59)</div>
+              <div class="zone-chip" style="flex:40;background:#ff6b6b;">Crisis (≥60)</div>
             </div>
           </div>
         </div>
