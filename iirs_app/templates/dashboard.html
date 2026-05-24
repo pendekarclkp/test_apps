@@ -304,7 +304,7 @@
     .scale-bar .zone-line { position: absolute; top: -4px; bottom: -4px; width: 2px; background: rgba(255,255,255,0.55); z-index: 3; }
     .scale-line-label { position: absolute; top: 30px; transform: translateX(-50%); font-size: 0.65rem; font-weight: 700; color: var(--muted); }
     .scale-marker { position: absolute; top: -10px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 2; }
-    .scale-marker .needle { width: 3px; height: 46px; border-radius: 2px; }
+    .scale-marker .needle { width: 3px; height: 36px; border-radius: 2px; }
     .scale-marker .marker-label { position: absolute; top: -22px; color: #fff; padding: 2px 7px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; white-space: nowrap; }
     .scale-zone-labels { display: flex; margin-top: 1.6rem; gap: 4px; }
     .zone-chip { flex: 1; text-align: center; padding: 4px 0; border-radius: 8px; font-size: 0.68rem; font-weight: 700; color: #0d1117; }
@@ -547,7 +547,7 @@
               {% for row in iirs_data %}
               {% set pos = row.iirs if row.iirs < 100 else 100 %}
               {% set mc = '#2dce89' if row.color == 'success' else '#ffc107' if row.color == 'warning' else '#fd7e14' if row.color == 'orange' else '#ff6b6b' %}
-              <div class="scale-marker" style="left:{{ pos }}%; top:{{ -10 + loop.index0 * 6 }}px;">
+              <div class="scale-marker" style="left:{{ pos }}%; top:-10px;">
                 <div class="marker-label" style="background:{{ mc }}; top:{{ -22 - loop.index0 * 6 }}px;">{{ row.cluster }} {{ '%.2f'|format(row.iirs) }}</div>
                 <div class="needle" style="background:{{ mc }};"></div>
               </div>
