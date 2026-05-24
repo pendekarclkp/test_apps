@@ -20,8 +20,8 @@ USERS = {
 }
 
 PLAYBOOKS = {
-    'Playbook 1': {
-        'title': 'Playbook 1 — Kategori Ringan',
+    'Tindakan Respons 1': {
+        'title': 'Tindakan Respons 1 — Kategori Ringan',
         'range': 'IIRS 0–35', 'color': 'success', 'icon': '✅',
         'actions': [
             'Monitor rutin sentimen publik',
@@ -30,8 +30,8 @@ PLAYBOOKS = {
             'Tidak diperlukan eskalasi khusus',
         ],
     },
-    'Playbook 2': {
-        'title': 'Playbook 2 — Kategori Sedang',
+    'Tindakan Respons 2': {
+        'title': 'Tindakan Respons 2 — Kategori Sedang',
         'range': 'IIRS 36–49', 'color': 'warning', 'icon': '⚠️',
         'actions': [
             'Peningkatan frekuensi monitoring sentimen',
@@ -51,8 +51,8 @@ PLAYBOOKS = {
             'Eskalasi ke manajemen senior',
         ],
     },
-    'Playbook 3': {
-        'title': 'Playbook 3 — Kategori Crisis',
+    'Tindakan Respons 3': {
+        'title': 'Tindakan Respons 3 — Kategori Crisis',
         'range': 'IIRS ≥ 60', 'color': 'danger', 'icon': '🚨',
         'actions': [
             'Aktivasi penuh protokol krisis komunikasi',
@@ -316,13 +316,13 @@ def parse_excel(filepath):
 
 def get_kategori(iirs_val):
     if iirs_val < 35:
-        return 'Ringan',       'Playbook 1',   'success'
+        return 'Ringan',       'Tindakan Respons 1',   'success'
     elif iirs_val < 50:
-        return 'Sedang',       'Playbook 2',   'warning'
+        return 'Sedang',       'Tindakan Respons 2',   'warning'
     elif iirs_val < 60:
         return 'Crisis Watch', 'Crisis Watch', 'orange'
     else:
-        return 'Crisis',       'Playbook 3',   'danger'
+        return 'Crisis',       'Tindakan Respons 3',   'danger'
 
 def current_user():
     return session.get('user')
