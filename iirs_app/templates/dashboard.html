@@ -460,8 +460,8 @@
           <div class="panel">
             <div class="panel-header">
               <i class="fas fa-chart-pie" style="color:#a78bfa"></i>
-              <h6>Source Score per Klaster</h6>
-              <small class="ms-auto" style="color:var(--muted);">Sentrix vs No Limit</small>
+              <h6>Breakdown Indikator per Klaster</h6>
+              <small class="ms-auto" style="color:var(--muted);">NS · VA · ER (Sentrix)</small>
             </div>
             <div class="panel-body">
               <div class="chart-wrap">
@@ -1073,22 +1073,26 @@
   });
 
   // Radar chart (overview) — breakdown indikator NS/VA/ER per kanal
+  // Radar breakdown NS/VA/ER per klaster (nilai Sentrix)
+  const radarColors = ['#a78bfa', '#58a6ff', '#fd7e14', '#2dce89', '#ff6b6b'];
+  const radarClusterDatasets = labels.map((cluster, i) => ({
+    label: cluster,
+    data: [sxNS[i], sxVA[i], sxER[i]],
+    backgroundColor: radarColors[i % radarColors.length] + '33',
+    borderColor: radarColors[i % radarColors.length],
+    pointBackgroundColor: radarColors[i % radarColors.length],
+    borderWidth: 2,
+  }));
   new Chart(document.getElementById('radarChart'), {
-    type: 'bar',
+    type: 'radar',
     data: {
-      labels,
-      datasets: [
-        { label: 'Sentrix',  data: sentrixData, backgroundColor: 'rgba(88,166,255,0.85)', borderWidth: 0, borderRadius: 4 },
-        { label: 'No Limit', data: nolimitData,  backgroundColor: 'rgba(253,126,20,0.85)', borderWidth: 0, borderRadius: 4 },
-      ]
+      labels: ['NS (Negative Sentiment)', 'VA (Volume Anomaly)', 'ER (Exposure & Reach)'],
+      datasets: radarClusterDatasets
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 12 } } },
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' } },
-        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e' }, min: 0, max: 100 }
-      }
+      scales: { r: { suggestedMin: 0, suggestedMax: 1, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#8b949e', backdropColor: 'transparent', stepSize: 0.2 }, pointLabels: { color: '#8b949e', font: { size: 10 } } } }
     }
   });
 
