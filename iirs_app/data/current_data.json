@@ -56,15 +56,17 @@
       "cluster": "Inflasi",
       "score_nolimit": 13.1,
       "score_sentrix": 46.7,
-      "iirs": 34.94
+      "iirs": 33.26
     },
     {
       "cluster": "BI-Rate",
       "score_nolimit": 25.89,
       "score_sentrix": 45.1,
-      "iirs": 38.3765
+      "iirs": 37.416
     }
   ],
+  "periode_bulan": "April",
+  "periode_tahun": "2026",
   "tindak_lanjut": [
     {
       "aspek": "1. Eskalasi",
@@ -108,9 +110,5 @@
     "Tier 2 — Sedang (IIRS 36–59)",
     "Tier 3 — Crisis (IIRS ≥60)"
   ],
-  "uploaded_at": "24 May 2026, 07:17 WIB",
-  "uploaded_by": "uploader",
-  "filename": "latest.xlsx",
-  "periode_bulan": "April",
-  "periode_tahun": "2026"
+  "updated_at": "2026-05-24T08:05:28.477286"
 }
