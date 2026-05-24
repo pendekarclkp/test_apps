@@ -439,6 +439,14 @@ def dashboard():
     breakdown_internal = [avg_field(sentrix_list, 'ns'), avg_field(sentrix_list, 'va'), avg_field(sentrix_list, 'er')]
     breakdown_external = [avg_field(nolimit_list, 'ns'), avg_field(nolimit_list, 'va'), avg_field(nolimit_list, 'er')]
 
+    # Align NS/VA/ER per cluster sesuai urutan iirs_list (pakai lookup by cluster name)
+    sx_by_cluster = {r['cluster']: r for r in sentrix_list}
+    nl_by_cluster = {r['cluster']: r for r in nolimit_list}
+    clusters = [r['cluster'] for r in iirs_list]
+    def pick(lookup, cluster, field, weight):
+        row = lookup.get(cluster, {})
+        return round(row.get(field, 0) * weight, 3)
+
     return render_template(
         'dashboard.html',
         user=current_user(),
@@ -464,12 +472,12 @@ def dashboard():
         chart_sentrix=json.dumps([r['score_sentrix'] for r in iirs_list]),
         chart_nolimit=json.dumps([r['score_nolimit'] for r in iirs_list]),
         chart_iirs   =json.dumps([round(r['iirs'], 2) for r in iirs_list]),
-        chart_sentrix_ns=json.dumps([round(r.get('ns',0)*40, 3) for r in sentrix_list]),
-        chart_sentrix_va=json.dumps([round(r.get('va',0)*30, 3) for r in sentrix_list]),
-        chart_sentrix_er=json.dumps([round(r.get('er',0)*30, 3) for r in sentrix_list]),
-        chart_nolimit_ns=json.dumps([round(r.get('ns',0)*40, 3) for r in nolimit_list]),
-        chart_nolimit_va=json.dumps([round(r.get('va',0)*30, 3) for r in nolimit_list]),
-        chart_nolimit_er=json.dumps([round(r.get('er',0)*30, 3) for r in nolimit_list]),
+        chart_sentrix_ns=json.dumps([pick(sx_by_cluster, c, 'ns', 40) for c in clusters]),
+        chart_sentrix_va=json.dumps([pick(sx_by_cluster, c, 'va', 30) for c in clusters]),
+        chart_sentrix_er=json.dumps([pick(sx_by_cluster, c, 'er', 30) for c in clusters]),
+        chart_nolimit_ns=json.dumps([pick(nl_by_cluster, c, 'ns', 40) for c in clusters]),
+        chart_nolimit_va=json.dumps([pick(nl_by_cluster, c, 'va', 30) for c in clusters]),
+        chart_nolimit_er=json.dumps([pick(nl_by_cluster, c, 'er', 30) for c in clusters]),
         chart_breakdown_internal=json.dumps(breakdown_internal),
         chart_breakdown_external=json.dumps(breakdown_external),
     )
