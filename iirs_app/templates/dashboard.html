@@ -441,56 +441,8 @@
       </div>
 
       <!-- Chart row: Source Score -->
-      <div class="row g-3 mb-3">
-        <div class="col-lg-8">
-          <div class="panel">
-            <div class="panel-header">
-              <i class="fas fa-chart-bar" style="color:var(--accent2)"></i>
-              <h6>Nilai Per Keyword Sentrix dan No Limit</h6>
-            </div>
-            <div class="panel-body">
-              <div class="chart-wrap">
-                <canvas id="barChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-4">
-          <div class="panel">
-            <div class="panel-header">
-              <i class="fas fa-chart-pie" style="color:#a78bfa"></i>
-              <h6>Breakdown Indikator per Keyword</h6>
-              <small class="ms-auto" style="color:var(--muted);">NS · VA · ER (Sentrix)</small>
-            </div>
-            <div class="panel-body">
-              <div class="chart-wrap">
-                <canvas id="radarChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chart row: IIRS result -->
-      <div class="row g-3 mb-4">
-        <div class="col-12">
-          <div class="panel">
-            <div class="panel-header">
-              <i class="fas fa-wave-square" style="color:#a78bfa"></i>
-              <h6>Hasil IIRS per Keyword</h6>
-              <small class="ms-auto" style="color:var(--muted);">Hasil perhitungan (0.4 × NoLimit) + (0.6 × Sentrix)</small>
-            </div>
-            <div class="panel-body">
-              <div class="chart-wrap" style="height:200px;">
-                <canvas id="iirsResultChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Quick status -->
-      <div class="panel">
+      <div class="panel mb-3">
         <div class="panel-header">
           <i class="fas fa-info-circle" style="color:#ffc107"></i>
           <h6>Status Keyword</h6>
@@ -520,6 +472,32 @@
               {% endfor %}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div class="panel mb-3">
+        <div class="panel-header">
+          <i class="fas fa-chart-bar" style="color:var(--accent2)"></i>
+          <h6>Nilai Per Keyword Sentrix dan No Limit</h6>
+        </div>
+        <div class="panel-body">
+          <div class="chart-wrap">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart row: IIRS result -->
+      <div class="panel mb-3">
+        <div class="panel-header">
+          <i class="fas fa-wave-square" style="color:#a78bfa"></i>
+          <h6>Hasil IIRS per Keyword</h6>
+          <small class="ms-auto" style="color:var(--muted);">Hasil perhitungan (0.4 × NoLimit) + (0.6 × Sentrix)</small>
+        </div>
+        <div class="panel-body">
+          <div class="chart-wrap" style="height:200px;">
+            <canvas id="iirsResultChart"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -1071,29 +1049,6 @@
     }
   });
 
-  // Radar chart (overview) — breakdown indikator NS/VA/ER per kanal
-  // Radar breakdown NS/VA/ER per klaster (nilai Sentrix)
-  const radarColors = ['#a78bfa', '#58a6ff', '#fd7e14', '#2dce89', '#ff6b6b'];
-  const radarClusterDatasets = labels.map((cluster, i) => ({
-    label: cluster,
-    data: [sxNS[i], sxVA[i], sxER[i]],
-    backgroundColor: radarColors[i % radarColors.length] + '33',
-    borderColor: radarColors[i % radarColors.length],
-    pointBackgroundColor: radarColors[i % radarColors.length],
-    borderWidth: 2,
-  }));
-  new Chart(document.getElementById('radarChart'), {
-    type: 'radar',
-    data: {
-      labels: ['NS (Negative Sentiment)', 'VA (Volume Anomaly)', 'ER (Exposure & Reach)'],
-      datasets: radarClusterDatasets
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 12 } } },
-      scales: { r: { suggestedMin: 0, suggestedMax: 1, grid: { color: 'rgba(255,255,255,0.08)' }, ticks: { color: '#8b949e', backdropColor: 'transparent', stepSize: 0.2 }, pointLabels: { color: '#8b949e', font: { size: 10 } } } }
-    }
-  });
 
   // Source score chart
   new Chart(document.getElementById('sourceScoreChart'), {
