@@ -445,7 +445,7 @@ def dashboard():
     clusters = [r['cluster'] for r in iirs_list]
     def pick(lookup, cluster, field, weight):
         row = lookup.get(cluster, {})
-        return round(row.get(field, 0) * weight, 3)
+        return round(row.get(field, 0), 4)
 
     return render_template(
         'dashboard.html',
