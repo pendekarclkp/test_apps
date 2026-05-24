@@ -280,6 +280,39 @@
     .iirs-orange { color: #fd7e14; }
     .iirs-danger { color: #ff6b6b; }
 
+    /* IIRS scale bar */
+    .scale-bar-wrap { position: relative; margin-top: 0.5rem; }
+    .scale-bar {
+      height: 26px; border-radius: 13px; position: relative; overflow: visible;
+      background: linear-gradient(to right,
+        #2dce89 0%, #2dce89 35%,
+        #ffc107 35%, #ffc107 50%,
+        #fd7e14 50%, #fd7e14 60%,
+        #ff6b6b 60%, #ff6b6b 100%);
+    }
+    .scale-bar .zone-line { position: absolute; top: -4px; bottom: -4px; width: 2px; background: rgba(255,255,255,0.55); z-index: 3; }
+    .scale-line-label { position: absolute; top: 30px; transform: translateX(-50%); font-size: 0.65rem; font-weight: 700; color: var(--muted); }
+    .scale-marker { position: absolute; top: -10px; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; z-index: 2; }
+    .scale-marker .needle { width: 3px; height: 46px; border-radius: 2px; }
+    .scale-marker .marker-label { position: absolute; top: -22px; color: #fff; padding: 2px 7px; border-radius: 8px; font-size: 0.65rem; font-weight: 700; white-space: nowrap; }
+    .scale-zone-labels { display: flex; margin-top: 1.6rem; gap: 4px; }
+    .zone-chip { flex: 1; text-align: center; padding: 4px 0; border-radius: 8px; font-size: 0.68rem; font-weight: 700; color: #0d1117; }
+
+    /* Signal cards */
+    .signal-card { border-left: 4px solid; background: var(--card-bg); border: 1px solid var(--border); border-radius: 0 10px 10px 0; padding: 0.9rem 1rem; height: 100%; }
+    .signal-card.warn { border-left-color: #fd7e14; }
+    .signal-card.info { border-left-color: #58a6ff; }
+    .signal-card.ok   { border-left-color: #2dce89; }
+    .signal-card .signal-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem; color: var(--text); }
+    .signal-card .signal-body { font-size: 0.8rem; color: var(--muted); line-height: 1.5; }
+
+    /* Panduan respon cards */
+    .pr-card { border: 1px solid var(--border); border-top: 3px solid; border-radius: 10px; padding: 1rem; height: 100%; background: var(--card-bg); }
+    .pr-card .pr-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+    .pr-card .pr-cluster { font-weight: 700; font-size: 0.95rem; }
+    .pr-card .pr-row { font-size: 0.8rem; color: var(--muted); line-height: 1.5; margin-top: 0.4rem; }
+    .pr-card .pr-row strong { color: var(--text); }
+
     @media (max-width: 992px) {
       .sidebar { display: none; }
       .main-content { margin-left: 0; }
@@ -415,7 +448,8 @@
         {% endif %}
       </div>
 
-      <div class="row g-3 mb-4">
+      <!-- Ringkasan Eksekutif: kartu IIRS -->
+      <div class="row g-3 mb-3">
         {% for row in iirs_data %}
         <div class="col-md-4">
           <div class="stat-card" style="border-left: 4px solid
@@ -428,11 +462,12 @@
             {% elif row.color == 'warning' %}rgba(255,193,7,0.06)
             {% elif row.color == 'orange' %}rgba(253,126,20,0.06)
             {% else %}rgba(255,107,107,0.06){% endif %});">
-            <div class="label">{{ row.cluster }}</div>
+            <div class="label">Keyword: {{ row.cluster }}</div>
             <div class="value iirs-{{ row.color }}">{{ '%.2f'|format(row.iirs) }}</div>
             <div class="sub">IIRS Score</div>
-            <div class="mt-2">
+            <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
               <span class="badge-{{ row.color }}">{{ row.kategori }}</span>
+              <span style="font-size:0.72rem;color:var(--muted);">{{ row.playbook_key }}</span>
             </div>
             <div class="bg-icon"><i class="fas fa-chart-line"></i></div>
           </div>
@@ -440,8 +475,76 @@
         {% endfor %}
       </div>
 
-      <!-- Chart row: Source Score -->
-      <!-- Quick status -->
+      <!-- Skala IIRS -->
+      <div class="panel mb-3">
+        <div class="panel-header">
+          <i class="fas fa-ruler-horizontal" style="color:var(--accent2)"></i>
+          <h6>Skala IIRS — Posisi Keyword pada Kontinum Risiko</h6>
+        </div>
+        <div class="panel-body">
+          <div class="scale-bar-wrap">
+            <div class="scale-bar">
+              <div class="zone-line" style="left:35%"><span class="scale-line-label">35</span></div>
+              <div class="zone-line" style="left:50%"><span class="scale-line-label">50</span></div>
+              <div class="zone-line" style="left:60%"><span class="scale-line-label">60</span></div>
+              {% for row in iirs_data %}
+              {% set pos = row.iirs if row.iirs < 100 else 100 %}
+              {% set mc = '#2dce89' if row.color == 'success' else '#ffc107' if row.color == 'warning' else '#fd7e14' if row.color == 'orange' else '#ff6b6b' %}
+              <div class="scale-marker" style="left:{{ pos }}%; top:{{ loop.index0 * 6 }}px;">
+                <div class="marker-label" style="background:{{ mc }}; top:{{ -22 - loop.index0 * 6 }}px;">{{ row.cluster }} {{ '%.2f'|format(row.iirs) }}</div>
+                <div class="needle" style="background:{{ mc }};"></div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="scale-zone-labels">
+              <div class="zone-chip" style="flex:35;background:#2dce89;">Ringan (0–35)</div>
+              <div class="zone-chip" style="flex:15;background:#ffc107;">Sedang (36–49)</div>
+              <div class="zone-chip" style="flex:10;background:#fd7e14;">Siaga (50–59)</div>
+              <div class="zone-chip" style="flex:40;background:#ff6b6b;">Crisis (≥60)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top row: Gauge + Nilai per keyword -->
+      <div class="row g-3 mb-3">
+        <div class="col-lg-5">
+          <div class="panel h-100">
+            <div class="panel-header">
+              <i class="fas fa-gauge-high" style="color:#a78bfa"></i>
+              <h6>Posisi IIRS Tiap Keyword</h6>
+            </div>
+            <div class="panel-body">
+              <div class="row g-2">
+                {% for row in iirs_data %}
+                <div class="col-{{ 12 if iirs_data|length == 1 else 6 if iirs_data|length == 2 else 4 }} text-center">
+                  <div style="position:relative;height:120px;">
+                    <canvas id="gaugeOv{{ loop.index }}"></canvas>
+                  </div>
+                  <div style="font-size:0.78rem;font-weight:600;margin-top:0.25rem;">{{ row.cluster }}</div>
+                  <div><span class="badge-{{ row.color }}">{{ row.kategori }}</span></div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="panel h-100">
+            <div class="panel-header">
+              <i class="fas fa-chart-bar" style="color:var(--accent2)"></i>
+              <h6>Nilai Per Keyword Sentrix dan No Limit</h6>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap">
+                <canvas id="barChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Keyword -->
       <div class="panel mb-3">
         <div class="panel-header">
           <i class="fas fa-info-circle" style="color:#ffc107"></i>
@@ -475,31 +578,109 @@
         </div>
       </div>
 
-      <div class="panel mb-3">
-        <div class="panel-header">
-          <i class="fas fa-chart-bar" style="color:var(--accent2)"></i>
-          <h6>Nilai Per Keyword Sentrix dan No Limit</h6>
+      <!-- Dekomposisi komponen per vendor -->
+      <div class="row g-3 mb-3">
+        <div class="col-lg-6">
+          <div class="panel h-100">
+            <div class="panel-header">
+              <i class="fas fa-layer-group" style="color:#58a6ff"></i>
+              <h6>Komponen NS · VA · ER per Keyword — Sentrix</h6>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap"><canvas id="chartSentrix"></canvas></div>
+            </div>
+          </div>
         </div>
-        <div class="panel-body">
-          <div class="chart-wrap">
-            <canvas id="barChart"></canvas>
+        <div class="col-lg-6">
+          <div class="panel h-100">
+            <div class="panel-header">
+              <i class="fas fa-layer-group" style="color:#fd7e14"></i>
+              <h6>Komponen NS · VA · ER per Keyword — No Limit</h6>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap"><canvas id="chartNoLimit"></canvas></div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Chart row: IIRS result -->
-      <div class="panel mb-3">
-        <div class="panel-header">
-          <i class="fas fa-wave-square" style="color:#a78bfa"></i>
-          <h6>Hasil IIRS per Keyword</h6>
-          <small class="ms-auto" style="color:var(--muted);">Hasil perhitungan (0.4 × NoLimit) + (0.6 × Sentrix)</small>
+      <!-- Radar + Hasil IIRS -->
+      <div class="row g-3 mb-3">
+        <div class="col-lg-6">
+          <div class="panel h-100">
+            <div class="panel-header">
+              <i class="fas fa-chart-pie" style="color:#a78bfa"></i>
+              <h6>Profil Risiko — Perbandingan Lintas Keyword</h6>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap" style="height:300px;"><canvas id="chartRadar"></canvas></div>
+            </div>
+          </div>
         </div>
-        <div class="panel-body">
-          <div class="chart-wrap" style="height:200px;">
-            <canvas id="iirsResultChart"></canvas>
+        <div class="col-lg-6">
+          <div class="panel h-100">
+            <div class="panel-header">
+              <i class="fas fa-wave-square" style="color:#a78bfa"></i>
+              <h6>Hasil IIRS per Keyword</h6>
+              <small class="ms-auto" style="color:var(--muted);">(0.4 × NoLimit) + (0.6 × Sentrix)</small>
+            </div>
+            <div class="panel-body">
+              <div class="chart-wrap" style="height:300px;"><canvas id="iirsResultChart"></canvas></div>
+            </div>
           </div>
         </div>
       </div>
+
+      <!-- Sinyal strategis -->
+      {% if signals %}
+      <div class="panel mb-3">
+        <div class="panel-header">
+          <i class="fas fa-bolt" style="color:#ffc107"></i>
+          <h6>Sinyal Strategis Lintas-Keyword</h6>
+        </div>
+        <div class="panel-body">
+          <div class="row g-3">
+            {% for s in signals %}
+            <div class="col-md-6">
+              <div class="signal-card {{ s.type }}">
+                <div class="signal-title">{{ s.title }}</div>
+                <div class="signal-body">{{ s.body }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Panduan respon singkat -->
+      {% if panduan_respon %}
+      <div class="panel mb-3">
+        <div class="panel-header">
+          <i class="fas fa-clipboard-list" style="color:#2dce89"></i>
+          <h6>Panduan Respon Singkat per Keyword</h6>
+          <small class="ms-auto" style="color:var(--muted);">Ringkasan dari sheet Tindak Lanjut sesuai tier</small>
+        </div>
+        <div class="panel-body">
+          <div class="row g-3">
+            {% for p in panduan_respon %}
+            {% set bc = '#2dce89' if p.color == 'success' else '#ffc107' if p.color == 'warning' else '#fd7e14' if p.color == 'orange' else '#ff6b6b' %}
+            <div class="col-md-4">
+              <div class="pr-card" style="border-top-color:{{ bc }};">
+                <div class="pr-head">
+                  <span class="pr-cluster">{{ p.cluster }}</span>
+                  <span class="badge-{{ p.color }}">Tier {{ p.tier }} — {{ p.kategori }}</span>
+                </div>
+                <div style="font-size:1.4rem;font-weight:700;color:{{ bc }};">{{ '%.2f'|format(p.iirs) }}</div>
+                {% if p.esensi %}<div class="pr-row"><strong>Esensi:</strong> {{ p.esensi }}</div>{% endif %}
+                {% if p.eskalasi %}<div class="pr-row"><strong>Eskalasi:</strong> {{ p.eskalasi }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     <!-- ===== SECTION: SOURCE SCORE ===== -->
@@ -1049,6 +1230,88 @@
     }
   });
 
+
+  // Overview gauges per keyword
+  const ovGaugeCenter = {
+    id: 'ovGaugeCenter',
+    afterDatasetDraw(chart) {
+      const { ctx, chartArea } = chart;
+      const o = chart.config.options.plugins.ovGaugeCenter;
+      const cx = (chartArea.left + chartArea.right) / 2;
+      const cy = chartArea.bottom - 6;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.fillStyle = o.color;
+      ctx.font = 'bold 1.3rem sans-serif';
+      ctx.fillText(o.value.toFixed(2), cx, cy);
+      ctx.restore();
+    }
+  };
+  iirsData.forEach((val, i) => {
+    const el = document.getElementById('gaugeOv' + (i + 1));
+    if (!el) return;
+    const v = Number(val) || 0;
+    const color = v < 35 ? '#2dce89' : v < 50 ? '#ffc107' : v < 60 ? '#fd7e14' : '#ff6b6b';
+    new Chart(el, {
+      type: 'doughnut',
+      data: { datasets: [{ data: [v, Math.max(0, 100 - v)], backgroundColor: [color, 'rgba(255,255,255,0.06)'], borderWidth: 0 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        circumference: 270, rotation: -135, cutout: '70%',
+        plugins: { legend: { display: false }, tooltip: { enabled: false }, ovGaugeCenter: { value: v, color: color } }
+      },
+      plugins: [ovGaugeCenter]
+    });
+  });
+
+  // Komponen NS/VA/ER per vendor (dekomposisi)
+  const compOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 10 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + (ctx.raw * 100).toFixed(1) + '%' } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: '#8b949e' } },
+      y: { min: 0, max: 1.05, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e', callback: v => Math.round(v * 100) + '%' } }
+    }
+  };
+  new Chart(document.getElementById('chartSentrix'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'NS (Negative Sentiment)', data: sxNS, backgroundColor: 'rgba(255,107,107,0.8)' },
+      { label: 'VA (Volume Anomaly)',     data: sxVA, backgroundColor: 'rgba(255,193,7,0.8)' },
+      { label: 'ER (Exposure & Reach)',   data: sxER, backgroundColor: 'rgba(88,166,255,0.8)' },
+    ] },
+    options: compOpts
+  });
+  new Chart(document.getElementById('chartNoLimit'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'NS (Negative Sentiment)', data: nlNS, backgroundColor: 'rgba(255,107,107,0.8)' },
+      { label: 'VA (Volume Anomaly)',     data: nlVA, backgroundColor: 'rgba(255,193,7,0.8)' },
+      { label: 'ER (Exposure & Reach)',   data: nlER, backgroundColor: 'rgba(88,166,255,0.8)' },
+    ] },
+    options: compOpts
+  });
+
+  // Radar profil risiko per keyword (NS/VA/ER Sentrix + Score + IIRS, dinormalisasi ke 0-100)
+  const radarColors = ['#a78bfa', '#58a6ff', '#fd7e14', '#2dce89', '#ff6b6b'];
+  const radarDatasets = labels.map((c, i) => ({
+    label: c,
+    data: [sxNS[i] * 100, sxVA[i] * 100, sxER[i] * 100, sentrixData[i], nolimitData[i], iirsData[i]],
+    backgroundColor: radarColors[i % radarColors.length] + '22',
+    borderColor: radarColors[i % radarColors.length],
+    pointBackgroundColor: radarColors[i % radarColors.length],
+    borderWidth: 2, pointRadius: 3,
+  }));
+  new Chart(document.getElementById('chartRadar'), {
+    type: 'radar',
+    data: { labels: ['NS (×100)', 'VA (×100)', 'ER (×100)', 'Score NoLimit', 'Score Sentrix', 'IIRS'], datasets: radarDatasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 10 } } },
+      scales: { r: { min: 0, suggestedMax: 100, grid: { color: 'rgba(255,255,255,0.1)' }, angleLines: { color: 'rgba(255,255,255,0.1)' }, pointLabels: { color: '#8b949e', font: { size: 10 } }, ticks: { display: false } } }
+    }
+  });
 
   // Source score chart
   new Chart(document.getElementById('sourceScoreChart'), {

@@ -456,6 +456,69 @@ def dashboard():
         row = lookup.get(cluster, {})
         return round(row.get(field, 0), 4)
 
+    # Sinyal strategis dinamis berdasarkan data terkini
+    signals = []
+    tier_label = {1: 'Ringan', 2: 'Sedang', 3: 'Crisis'}
+
+    saturated = [r['cluster'] for r in iirs_enriched
+                 if sx_by_cluster.get(r['cluster'], {}).get('er', 0) >= 0.99]
+    if saturated:
+        signals.append({
+            'type': 'warn',
+            'title': 'ER Jenuh — ' + ', '.join(saturated) + ' (Sentrix)',
+            'body': 'ER Sentrix pada ' + ', '.join(saturated) + ' sudah mencapai 100% (saturasi). '
+                    'Kenaikan NS pada periode berikutnya langsung berdampak signifikan menaikkan IIRS — tidak ada ruang penyangga jangkauan.',
+        })
+
+    if iirs_enriched:
+        top = max(iirs_enriched, key=lambda r: r['iirs'])
+        if 45 <= top['iirs'] < 50:
+            signals.append({
+                'type': 'warn',
+                'title': top['cluster'] + ': Waspadai Eskalasi ke Crisis Watch',
+                'body': 'IIRS ' + top['cluster'] + ' (' + ('%.2f' % top['iirs']) + ') mendekati ambang Siaga (50). '
+                        'Diperlukan langkah proaktif agar tidak melewati fase Siaga pada periode mendatang.',
+            })
+
+    gaps = sorted(iirs_enriched, key=lambda r: abs(r['score_nolimit'] - r['score_sentrix']), reverse=True)
+    if gaps:
+        g = gaps[0]
+        diff = abs(g['score_nolimit'] - g['score_sentrix'])
+        if diff >= 15:
+            signals.append({
+                'type': 'info',
+                'title': g['cluster'] + ': Gap Dua Kanal (' + ('%.0f' % diff) + ' Poin)',
+                'body': 'IIRS ' + g['cluster'] + ' dibentuk dari ketimpangan Sentrix ' + ('%.2f' % g['score_sentrix']) +
+                        ' dan NoLimit ' + ('%.2f' % g['score_nolimit']) + '. Strategi bridging edukatif diperlukan.',
+            })
+
+    if active_tier < 3:
+        crisis_watch = [r['cluster'] for r in iirs_enriched if 50 <= r['iirs'] < 60]
+        if not crisis_watch:
+            signals.append({
+                'type': 'ok',
+                'title': 'Tidak Ada Keyword pada Level Crisis',
+                'body': 'Tidak ada keyword yang mencapai Crisis (≥60) atau Crisis Watch (50–59) pada periode ini. '
+                        'Protokol Tier 3 dan fase Siaga tidak diaktifkan.',
+            })
+
+    # Panduan respon singkat per keyword sesuai tier & sheet Tindak Lanjut
+    tl_by_aspek = {str(r.get('aspek', '')).strip().lower(): r for r in tindak_lanjut}
+    esensi_row = tl_by_aspek.get('esensi', {})
+    eskalasi_row = next((r for r in tindak_lanjut if 'eskalasi' in str(r.get('aspek', '')).lower()), {})
+    panduan_respon = []
+    for r in iirs_enriched:
+        tk = 'tier' + str(r['tier'])
+        panduan_respon.append({
+            'cluster':  r['cluster'],
+            'iirs':     r['iirs'],
+            'tier':     r['tier'],
+            'color':    r['color'],
+            'kategori': r['kategori'],
+            'esensi':   esensi_row.get(tk, ''),
+            'eskalasi': eskalasi_row.get(tk, ''),
+        })
+
     return render_template(
         'dashboard.html',
         user=current_user(),
@@ -490,6 +553,8 @@ def dashboard():
         chart_nolimit_er=json.dumps([pick(nl_by_cluster, c, 'er', 30) for c in clusters]),
         chart_breakdown_internal=json.dumps(breakdown_internal),
         chart_breakdown_external=json.dumps(breakdown_external),
+        signals=signals,
+        panduan_respon=panduan_respon,
     )
 
 # Upload: hanya role 'uploader'
