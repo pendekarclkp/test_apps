@@ -10,8 +10,14 @@ BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 DATA_FILE     = os.path.join(BASE_DIR, 'data', 'current_data.json')
 HISTORY_FILE  = os.path.join(BASE_DIR, 'data', 'history.json')
+TRADES_FILE   = os.path.join(BASE_DIR, 'data', 'trades.json')
+OPPS_FILE     = os.path.join(BASE_DIR, 'data', 'opps.json')
+TRADING_UPLOADS = os.path.join(BASE_DIR, 'uploads', 'trading')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
+os.makedirs(TRADING_UPLOADS, exist_ok=True)
+
+TRADING_PASSWORD = os.environ.get('TRADING_PASSWORD', 'trade2026')
 
 # ── Users: admin = dashboard only | uploader = dashboard + upload ─────────────
 USERS = {
@@ -688,6 +694,220 @@ def delete_snapshot(snap_id):
         pass
     flash('Snapshot berhasil dihapus.', 'success')
     return redirect(url_for('history_page'))
+
+# ── Trading Dashboard ─────────────────────────────────────────────────────────
+
+PATTERN_TAGS = {
+    'chart': ['bull_flag','bear_flag','breakout','reversal','pennant','wedge','double_top','double_bottom'],
+    'price_action': ['vwap_reclaim','support_flip','resistance_test','range_boundary','previous_high','previous_low'],
+    'market_condition': ['trend_day','reversal_day','chop_day','news_spike','low_volume','high_volume_open'],
+}
+ALL_PATTERNS = PATTERN_TAGS['chart'] + PATTERN_TAGS['price_action']
+ALL_CONDITIONS = PATTERN_TAGS['market_condition']
+
+def load_trades():
+    if os.path.exists(TRADES_FILE):
+        try:
+            with open(TRADES_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+def save_trades(trades):
+    with open(TRADES_FILE, 'w') as f:
+        json.dump(trades, f, indent=2)
+
+def load_opps():
+    if os.path.exists(OPPS_FILE):
+        try:
+            with open(OPPS_FILE) as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return []
+
+def save_opps(opps):
+    with open(OPPS_FILE, 'w') as f:
+        json.dump(opps, f, indent=2)
+
+def require_trading_auth(f):
+    from functools import wraps
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('trading_auth'):
+            return redirect(url_for('trading_login'))
+        return f(*args, **kwargs)
+    return decorated
+
+def calc_r(direction, entry, exit_price, stop):
+    try:
+        entry, exit_price, stop = float(entry), float(exit_price), float(stop)
+        if direction == 'Long':
+            risk = entry - stop
+        else:
+            risk = stop - entry
+        if risk <= 0:
+            return None
+        if direction == 'Long':
+            r = (exit_price - entry) / risk
+        else:
+            r = (entry - exit_price) / risk
+        return round(r, 2)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return None
+
+@app.route('/trading/login', methods=['GET', 'POST'])
+def trading_login():
+    error = None
+    if request.method == 'POST':
+        pwd = request.form.get('password', '')
+        if pwd == TRADING_PASSWORD:
+            session['trading_auth'] = True
+            return redirect(url_for('trading_dashboard'))
+        error = 'Incorrect password.'
+    return render_template('trading_login.html', error=error)
+
+@app.route('/trading/logout')
+def trading_logout():
+    session.pop('trading_auth', None)
+    return redirect(url_for('trading_login'))
+
+@app.route('/trading')
+@require_trading_auth
+def trading_dashboard():
+    return render_template('trading_dashboard.html',
+                           all_patterns=ALL_PATTERNS,
+                           all_conditions=ALL_CONDITIONS,
+                           pattern_tags=PATTERN_TAGS)
+
+# ── Trading API ───────────────────────────────────────────────────────────────
+
+@app.route('/trading/api/trades', methods=['GET'])
+@require_trading_auth
+def api_trades_list():
+    trades = load_trades()
+    date_filter = request.args.get('date')
+    if date_filter:
+        trades = [t for t in trades if t.get('date') == date_filter]
+    trades.sort(key=lambda t: (t.get('date',''), t.get('created_at','')))
+    return jsonify(trades)
+
+@app.route('/trading/api/trades', methods=['POST'])
+@require_trading_auth
+def api_trades_add():
+    data = request.get_json(force=True)
+    trades = load_trades()
+    direction = data.get('direction', 'Long')
+    entry = data.get('entry')
+    exit_price = data.get('exit')
+    stop = data.get('stop')
+    risk_usd = data.get('risk_usd')
+    r = calc_r(direction, entry, exit_price, stop)
+    try:
+        pnl = round(float(risk_usd) * r, 2) if (r is not None and risk_usd) else None
+    except (TypeError, ValueError):
+        pnl = None
+    trade = {
+        'id': str(uuid.uuid4()),
+        'date': data.get('date', datetime.now().strftime('%Y-%m-%d')),
+        'created_at': datetime.now().isoformat(),
+        'asset': data.get('asset', '').upper(),
+        'direction': direction,
+        'entry': entry,
+        'exit': exit_price,
+        'stop': stop,
+        'tp': data.get('tp'),
+        'risk_usd': risk_usd,
+        'r_outcome': r,
+        'pnl_usd': pnl,
+        'status': data.get('status', 'open'),
+        'is_best_opp': data.get('is_best_opp', False),
+        'patterns': data.get('patterns', []),
+        'market_condition': data.get('market_condition', ''),
+        'notes': data.get('notes', ''),
+        'screenshot_filename': data.get('screenshot_filename'),
+    }
+    trades.append(trade)
+    save_trades(trades)
+    return jsonify(trade), 201
+
+@app.route('/trading/api/trades/<trade_id>', methods=['PUT'])
+@require_trading_auth
+def api_trades_update(trade_id):
+    data = request.get_json(force=True)
+    trades = load_trades()
+    trade = next((t for t in trades if t['id'] == trade_id), None)
+    if not trade:
+        return jsonify({'error': 'not found'}), 404
+    for field in ['date','asset','direction','entry','exit','stop','tp','risk_usd',
+                  'status','is_best_opp','patterns','market_condition','notes']:
+        if field in data:
+            trade[field] = data[field]
+    if 'asset' in data:
+        trade['asset'] = trade['asset'].upper()
+    r = calc_r(trade['direction'], trade['entry'], trade['exit'], trade['stop'])
+    trade['r_outcome'] = r
+    try:
+        trade['pnl_usd'] = round(float(trade['risk_usd']) * r, 2) if (r is not None and trade.get('risk_usd')) else None
+    except (TypeError, ValueError):
+        trade['pnl_usd'] = None
+    save_trades(trades)
+    return jsonify(trade)
+
+@app.route('/trading/api/trades/<trade_id>', methods=['DELETE'])
+@require_trading_auth
+def api_trades_delete(trade_id):
+    trades = load_trades()
+    trades = [t for t in trades if t['id'] != trade_id]
+    save_trades(trades)
+    return jsonify({'ok': True})
+
+@app.route('/trading/api/opps', methods=['GET'])
+@require_trading_auth
+def api_opps_list():
+    opps = load_opps()
+    date_filter = request.args.get('date')
+    if date_filter:
+        opps = [o for o in opps if o.get('date') == date_filter]
+    return jsonify(opps)
+
+@app.route('/trading/api/opps', methods=['POST'])
+@require_trading_auth
+def api_opps_add():
+    data = request.get_json(force=True)
+    opps = load_opps()
+    opp = {
+        'id': str(uuid.uuid4()),
+        'date': data.get('date', datetime.now().strftime('%Y-%m-%d')),
+        'created_at': datetime.now().isoformat(),
+        'asset': data.get('asset', '').upper(),
+        'direction': data.get('direction', 'Long'),
+        'entry_zone': data.get('entry_zone'),
+        'patterns': data.get('patterns', []),
+        'market_condition': data.get('market_condition', ''),
+        'why_missed': data.get('why_missed', ''),
+        'would_have_worked': data.get('would_have_worked', False),
+        'notes': data.get('notes', ''),
+    }
+    opps.append(opp)
+    save_opps(opps)
+    return jsonify(opp), 201
+
+@app.route('/trading/api/opps/<opp_id>', methods=['DELETE'])
+@require_trading_auth
+def api_opps_delete(opp_id):
+    opps = load_opps()
+    opps = [o for o in opps if o['id'] != opp_id]
+    save_opps(opps)
+    return jsonify({'ok': True})
+
+@app.route('/trading/api/all-trades', methods=['GET'])
+@require_trading_auth
+def api_all_trades():
+    trades = load_trades()
+    trades.sort(key=lambda t: t.get('date', ''))
+    return jsonify(trades)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

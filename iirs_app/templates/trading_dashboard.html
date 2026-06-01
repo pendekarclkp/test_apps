@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trading Journal</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --win:  #198754;
+      --loss: #dc3545;
+      --accent: #0d6efd;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0d1b2a;
+      --muted: #64748b;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, sans-serif; font-size: .9rem; }
+    /* ── Top bar ── */
+    .topbar { background: var(--card); border-bottom: 1px solid var(--border); padding: .75rem 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .topbar-logo { font-weight: 800; font-size: 1.1rem; color: var(--text); letter-spacing: -.02em; }
+    .topbar-logo span { color: var(--accent); }
+    .topbar-spacer { flex: 1; }
+    /* ── Nav tabs ── */
+    .nav-pills .nav-link { color: var(--muted); font-weight: 500; padding: .45rem .9rem; border-radius: 8px; font-size: .85rem; }
+    .nav-pills .nav-link.active { background: var(--accent); color: #fff; }
+    /* ── Cards ── */
+    .card { border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .card-header { background: transparent; border-bottom: 1px solid var(--border); font-weight: 600; padding: .75rem 1rem; font-size: .875rem; }
+    /* ── KPI chips ── */
+    .kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+    .kpi-card .kpi-val { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+    .kpi-card .kpi-lbl { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: .2rem; }
+    /* ── Table ── */
+    .trade-table th { font-size: .75rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; background: #f8fafc; border-bottom: 2px solid var(--border); white-space: nowrap; }
+    .trade-table td { vertical-align: middle; font-size: .85rem; }
+    .trade-table tr.winner { background: #f0fdf4; }
+    .trade-table tr.loser  { background: #fff5f5; }
+    .trade-table tr.open-trade { background: #fffff0; }
+    .r-win  { color: var(--win);  font-weight: 700; }
+    .r-loss { color: var(--loss); font-weight: 700; }
+    .r-open { color: #b45309; font-weight: 600; }
+    /* ── Tags ── */
+    .tag { display: inline-block; font-size: .7rem; padding: .15rem .45rem; border-radius: 4px; background: #e2e8f0; color: #334155; margin: 1px; font-weight: 500; }
+    .tag-chart { background: #dbeafe; color: #1d4ed8; }
+    .tag-pa    { background: #d1fae5; color: #065f46; }
+    .tag-mc    { background: #fef3c7; color: #92400e; }
+    /* ── Opp cards ── */
+    .opp-card { border: 1px solid var(--border); border-radius: 10px; padding: 1rem; background: var(--card); position: relative; }
+    .opp-card .opp-asset { font-weight: 700; font-size: 1rem; }
+    .opp-card .opp-dir-long  { color: var(--win); }
+    .opp-card .opp-dir-short { color: var(--loss); }
+    .opp-card.best-actual { border-left: 4px solid var(--accent); }
+    .opp-card.missed { border-left: 4px solid #f59e0b; }
+    /* ── Modals ── */
+    .modal-header { background: #f8fafc; }
+    /* ── Streak badge ── */
+    .streak-badge { display: inline-flex; align-items: center; gap: .4rem; padding: .4rem .8rem; border-radius: 8px; font-weight: 700; font-size: .95rem; }
+    .streak-win  { background: #d1fae5; color: var(--win); }
+    .streak-loss { background: #fee2e2; color: var(--loss); }
+    .streak-none { background: #f1f5f9; color: var(--muted); }
+    /* ── Pattern table ── */
+    .pattern-bar { height: 8px; border-radius: 4px; background: var(--accent); min-width: 4px; }
+    /* ── Misc ── */
+    .section-title { font-weight: 700; font-size: 1rem; color: var(--text); margin-bottom: .75rem; }
+    .empty-state { text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
+    .empty-state i { font-size: 2rem; opacity: .4; margin-bottom: .5rem; }
+    .del-btn { opacity: .5; } .del-btn:hover { opacity: 1; }
+    @media (max-width: 768px) { .topbar { flex-wrap: wrap; } }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-logo">Trade<span>Journal</span></div>
+  <div class="topbar-spacer"></div>
+  <input type="date" id="globalDate" class="form-control form-control-sm" style="width:160px">
+  <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addTradeModal">
+    <i class="fa fa-plus me-1"></i>Add Trade
+  </button>
+  <button class="btn btn-sm btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#addOppModal">
+    <i class="fa fa-eye me-1"></i>Missed Opp
+  </button>
+  <a href="/trading/logout" class="btn btn-sm btn-outline-secondary">
+    <i class="fa fa-sign-out-alt me-1"></i>Logout
+  </a>
+</div>
+
+<!-- Nav -->
+<div class="container-fluid px-3 py-3">
+  <ul class="nav nav-pills mb-3" id="mainTabs">
+    <li class="nav-item"><a class="nav-link active" href="#" data-tab="log">Daily Trade Log</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-tab="opps">Best Opps</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-tab="stats">Stats &amp; Analytics</a></li>
+    <li class="nav-item"><a class="nav-link" href="#" data-tab="patterns">Patterns Tracker</a></li>
+  </ul>
+
+  <!-- ══ TAB 1: Daily Trade Log ══════════════════════════════════════════════ -->
+  <div id="tab-log">
+    <div class="d-flex align-items-center mb-3 gap-2">
+      <span class="section-title mb-0" id="logDateLabel">Today's Trades</span>
+      <span class="badge bg-secondary" id="logTradeCount">0</span>
+    </div>
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table trade-table mb-0" id="tradeTable">
+          <thead>
+            <tr>
+              <th>Asset</th><th>Dir</th><th>Entry</th><th>Exit</th>
+              <th>Stop</th><th>TP</th><th>Risk $</th><th>R</th><th>P&amp;L $</th>
+              <th>Status</th><th>Patterns</th><th>Condition</th><th>Notes</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="tradeBody">
+            <tr><td colspan="14"><div class="empty-state"><i class="fa fa-chart-line d-block"></i>No trades yet — click "Add Trade" to log your first one.</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 2: Best Opps ════════════════════════════════════════════════════ -->
+  <div id="tab-opps" style="display:none">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <p class="section-title"><i class="fa fa-star text-primary me-1"></i>Best Actual Trades</p>
+        <div id="bestActualList"></div>
+      </div>
+      <div class="col-md-6">
+        <p class="section-title"><i class="fa fa-binoculars text-warning me-1"></i>Missed Plays</p>
+        <div id="missedList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 3: Stats & Analytics ═══════════════════════════════════════════ -->
+  <div id="tab-stats" style="display:none">
+    <div class="row g-2 mb-3 align-items-center">
+      <div class="col-auto">
+        <label class="form-label mb-0 fw-semibold" style="font-size:.8rem">From</label>
+        <input type="date" id="statsFrom" class="form-control form-control-sm ms-1" style="width:150px;display:inline-block">
+      </div>
+      <div class="col-auto">
+        <label class="form-label mb-0 fw-semibold" style="font-size:.8rem">To</label>
+        <input type="date" id="statsTo" class="form-control form-control-sm ms-1" style="width:150px;display:inline-block">
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-sm btn-outline-primary ms-2" onclick="renderStats()">Apply</button>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="row g-3 mb-4" id="kpiRow">
+      <div class="col-6 col-md-2"><div class="kpi-card"><div class="kpi-val" id="kpi-total">—</div><div class="kpi-lbl">Total Trades</div></div></div>
+      <div class="col-6 col-md-2"><div class="kpi-card"><div class="kpi-val" id="kpi-winrate">—</div><div class="kpi-lbl">Win Rate</div></div></div>
+      <div class="col-6 col-md-2"><div class="kpi-card"><div class="kpi-val text-success" id="kpi-avgwin">—</div><div class="kpi-lbl">Avg R (Win)</div></div></div>
+      <div class="col-6 col-md-2"><div class="kpi-card"><div class="kpi-val text-danger" id="kpi-avgloss">—</div><div class="kpi-lbl">Avg R (Loss)</div></div></div>
+      <div class="col-6 col-md-2"><div class="kpi-card"><div class="kpi-val text-success" id="kpi-best">—</div><div class="kpi-lbl">Best Trade</div></div></div>
+      <div class="col-6 col-md-2"><div class="kpi-card"><div class="kpi-val text-danger" id="kpi-worst">—</div><div class="kpi-lbl">Worst Trade</div></div></div>
+    </div>
+
+    <!-- Streak -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <div>
+        <div class="fw-semibold mb-1" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Current Streak</div>
+        <div id="currentStreak" class="streak-badge streak-none">—</div>
+      </div>
+      <div>
+        <div class="fw-semibold mb-1" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Max Win Streak</div>
+        <div id="maxWinStreak" class="streak-badge streak-win">—</div>
+      </div>
+      <div>
+        <div class="fw-semibold mb-1" style="font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Max Drawdown</div>
+        <div id="maxDrawdown" class="streak-badge streak-loss">—</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-3">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">Cumulative R — P&amp;L Curve</div>
+          <div class="card-body" style="height:280px"><canvas id="pnlChart"></canvas></div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">Win / Loss by Weekday</div>
+          <div class="card-body" style="height:280px"><canvas id="weekdayChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TAB 4: Patterns Tracker ════════════════════════════════════════════ -->
+  <div id="tab-patterns" style="display:none">
+    <div class="row g-3">
+      <div class="col-md-7">
+        <div class="card">
+          <div class="card-header">Pattern Performance</div>
+          <div class="card-body p-0">
+            <table class="table mb-0" id="patternTable">
+              <thead class="trade-table">
+                <tr><th>Pattern</th><th>Trades</th><th>Win Rate</th><th>Avg R</th><th>Avg R bar</th></tr>
+              </thead>
+              <tbody id="patternBody">
+                <tr><td colspan="5"><div class="empty-state"><i class="fa fa-tags d-block"></i>No tagged trades yet.</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <div class="card">
+          <div class="card-header">Avg R by Pattern</div>
+          <div class="card-body" style="height:320px"><canvas id="patternChart"></canvas></div>
+        </div>
+        <div class="card mt-3">
+          <div class="card-header">Avg R by Market Condition</div>
+          <div class="card-body p-0">
+            <table class="table mb-0" id="conditionTable">
+              <thead class="trade-table"><tr><th>Condition</th><th>Trades</th><th>Avg R</th></tr></thead>
+              <tbody id="conditionBody">
+                <tr><td colspan="3"><div class="empty-state" style="padding:1rem"><i class="fa fa-cloud d-block" style="font-size:1.2rem"></i>No data.</div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /container -->
+
+<!-- ══ ADD TRADE MODAL ════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="addTradeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Log Trade</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Date</label>
+            <input type="date" id="t-date" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Asset</label>
+            <input type="text" id="t-asset" class="form-control" placeholder="BTC, ETH…">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Direction</label>
+            <select id="t-dir" class="form-select">
+              <option value="Long">Long</option>
+              <option value="Short">Short</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select id="t-status" class="form-select">
+              <option value="open">Open</option>
+              <option value="full_tp">Full TP</option>
+              <option value="partial_tp">Partial TP</option>
+              <option value="stopped">Stopped Out</option>
+              <option value="manual_exit">Manual Exit</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Entry</label>
+            <input type="number" id="t-entry" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Exit</label>
+            <input type="number" id="t-exit" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Stop</label>
+            <input type="number" id="t-stop" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">TP</label>
+            <input type="number" id="t-tp" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Risk ($)</label>
+            <input type="number" id="t-risk" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Market Condition</label>
+            <select id="t-condition" class="form-select">
+              <option value="">— None —</option>
+              {% for c in all_conditions %}<option value="{{ c }}">{{ c.replace('_',' ').title() }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="t-bestop">
+              <label class="form-check-label fw-semibold" for="t-bestop">Best Opp ⭐</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Patterns</label>
+            <div class="d-flex flex-wrap gap-1" id="patternCheckboxes">
+              {% for p in all_patterns %}
+              <div class="form-check form-check-inline m-0">
+                <input class="form-check-input t-pat" type="checkbox" value="{{ p }}" id="tp-{{ p }}">
+                <label class="form-check-label" for="tp-{{ p }}" style="font-size:.8rem">{{ p.replace('_',' ') }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea id="t-notes" class="form-control" rows="2" placeholder="What worked? What didn't? Emotions?"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary fw-semibold" id="saveTradeBtn">Save Trade</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ EDIT TRADE MODAL ═══════════════════════════════════════════════════════ -->
+<div class="modal fade" id="editTradeModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Edit Trade</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="et-id">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Date</label>
+            <input type="date" id="et-date" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Asset</label>
+            <input type="text" id="et-asset" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Direction</label>
+            <select id="et-dir" class="form-select">
+              <option value="Long">Long</option>
+              <option value="Short">Short</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Status</label>
+            <select id="et-status" class="form-select">
+              <option value="open">Open</option>
+              <option value="full_tp">Full TP</option>
+              <option value="partial_tp">Partial TP</option>
+              <option value="stopped">Stopped Out</option>
+              <option value="manual_exit">Manual Exit</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Entry</label>
+            <input type="number" id="et-entry" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Exit</label>
+            <input type="number" id="et-exit" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Stop</label>
+            <input type="number" id="et-stop" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">TP</label>
+            <input type="number" id="et-tp" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Risk ($)</label>
+            <input type="number" id="et-risk" class="form-control" step="any">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Market Condition</label>
+            <select id="et-condition" class="form-select">
+              <option value="">— None —</option>
+              {% for c in all_conditions %}<option value="{{ c }}">{{ c.replace('_',' ').title() }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="et-bestop">
+              <label class="form-check-label fw-semibold" for="et-bestop">Best Opp ⭐</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Patterns</label>
+            <div class="d-flex flex-wrap gap-1" id="editPatternCheckboxes">
+              {% for p in all_patterns %}
+              <div class="form-check form-check-inline m-0">
+                <input class="form-check-input et-pat" type="checkbox" value="{{ p }}" id="etp-{{ p }}">
+                <label class="form-check-label" for="etp-{{ p }}" style="font-size:.8rem">{{ p.replace('_',' ') }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea id="et-notes" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary fw-semibold" id="updateTradeBtn">Update Trade</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADD OPP MODAL ══════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="addOppModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Log Missed Opp</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Date</label>
+            <input type="date" id="o-date" class="form-control">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Asset</label>
+            <input type="text" id="o-asset" class="form-control" placeholder="ETH">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Direction</label>
+            <select id="o-dir" class="form-select">
+              <option value="Long">Long</option>
+              <option value="Short">Short</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Entry Zone</label>
+            <input type="number" id="o-entry" class="form-control" step="any" placeholder="Price level">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Market Condition</label>
+            <select id="o-condition" class="form-select">
+              <option value="">— None —</option>
+              {% for c in all_conditions %}<option value="{{ c }}">{{ c.replace('_',' ').title() }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Patterns</label>
+            <div class="d-flex flex-wrap gap-1">
+              {% for p in all_patterns %}
+              <div class="form-check form-check-inline m-0">
+                <input class="form-check-input o-pat" type="checkbox" value="{{ p }}" id="op-{{ p }}">
+                <label class="form-check-label" for="op-{{ p }}" style="font-size:.8rem">{{ p.replace('_',' ') }}</label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Why Missed?</label>
+            <input type="text" id="o-why" class="form-control" placeholder="Was away, didn't notice, hesitated…">
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="o-worked">
+              <label class="form-check-label fw-semibold" for="o-worked">Would have worked</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Notes</label>
+            <textarea id="o-notes" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-warning fw-semibold text-dark" id="saveOppBtn">Save Opp</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let allTrades = [];
+let allOpps   = [];
+let pnlChartInst, weekdayChartInst, patternChartInst;
+
+const ALL_PATTERNS = {{ all_patterns | tojson }};
+const ALL_CONDITIONS = {{ all_conditions | tojson }};
+const PATTERN_TAGS = {{ pattern_tags | tojson }};
+
+// ── Tab switching ──────────────────────────────────────────────────────────────
+document.querySelectorAll('[data-tab]').forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelectorAll('[data-tab]').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    document.querySelectorAll('[id^="tab-"]').forEach(d => d.style.display = 'none');
+    document.getElementById('tab-' + link.dataset.tab).style.display = '';
+    if (link.dataset.tab === 'stats') renderStats();
+    if (link.dataset.tab === 'patterns') renderPatterns();
+    if (link.dataset.tab === 'opps') renderOpps();
+  });
+});
+
+// ── Init date ────────────────────────────────────────────────────────────────
+const today = new Date().toISOString().slice(0, 10);
+document.getElementById('globalDate').value = today;
+document.getElementById('t-date').value = today;
+document.getElementById('o-date').value = today;
+
+const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+document.getElementById('statsFrom').value = d30.toISOString().slice(0, 10);
+document.getElementById('statsTo').value = today;
+
+document.getElementById('globalDate').addEventListener('change', () => {
+  document.getElementById('t-date').value = document.getElementById('globalDate').value;
+  document.getElementById('o-date').value = document.getElementById('globalDate').value;
+  loadDayTrades();
+  renderOpps();
+  updateLogDateLabel();
+});
+
+function updateLogDateLabel() {
+  const d = document.getElementById('globalDate').value;
+  document.getElementById('logDateLabel').textContent = d === today ? "Today's Trades" : `Trades — ${d}`;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function fmt(v, decimals = 2) {
+  if (v === null || v === undefined) return '—';
+  return Number(v).toFixed(decimals);
+}
+function fmtR(r) {
+  if (r === null || r === undefined) return '<span class="r-open">open</span>';
+  const cls = r > 0 ? 'r-win' : r < 0 ? 'r-loss' : '';
+  return `<span class="${cls}">${r > 0 ? '+' : ''}${r.toFixed(2)}R</span>`;
+}
+function fmtPnl(p) {
+  if (p === null || p === undefined) return '—';
+  const cls = p > 0 ? 'text-success fw-semibold' : p < 0 ? 'text-danger fw-semibold' : '';
+  return `<span class="${cls}">${p > 0 ? '+' : ''}$${Math.abs(p).toFixed(2)}</span>`;
+}
+function tagHtml(patterns) {
+  return (patterns || []).map(p => {
+    let cls = 'tag';
+    if (PATTERN_TAGS.chart.includes(p)) cls += ' tag-chart';
+    else if (PATTERN_TAGS.price_action.includes(p)) cls += ' tag-pa';
+    return `<span class="${cls}">${p.replace(/_/g,' ')}</span>`;
+  }).join('');
+}
+function statusBadge(s) {
+  const map = {
+    open: 'bg-warning text-dark', full_tp: 'bg-success', partial_tp: 'bg-info text-dark',
+    stopped: 'bg-danger', manual_exit: 'bg-secondary'
+  };
+  const labels = { open:'Open', full_tp:'Full TP', partial_tp:'Partial TP', stopped:'Stopped', manual_exit:'Manual Exit' };
+  return `<span class="badge ${map[s]||'bg-secondary'}" style="font-size:.7rem">${labels[s]||s}</span>`;
+}
+function rowClass(t) {
+  if (t.status === 'open') return 'open-trade';
+  if (t.r_outcome === null || t.r_outcome === undefined) return '';
+  return t.r_outcome > 0 ? 'winner' : 'loser';
+}
+
+// ── Load trades for selected day ──────────────────────────────────────────────
+async function loadDayTrades() {
+  const date = document.getElementById('globalDate').value;
+  const resp = await fetch(`/trading/api/trades?date=${date}`);
+  const trades = await resp.json();
+  renderTradeTable(trades);
+}
+
+async function loadAllTrades() {
+  const resp = await fetch('/trading/api/all-trades');
+  allTrades = await resp.json();
+}
+
+async function loadAllOpps() {
+  const resp = await fetch('/trading/api/opps');
+  allOpps = await resp.json();
+}
+
+function renderTradeTable(trades) {
+  document.getElementById('logTradeCount').textContent = trades.length;
+  const tbody = document.getElementById('tradeBody');
+  if (!trades.length) {
+    tbody.innerHTML = `<tr><td colspan="14"><div class="empty-state"><i class="fa fa-chart-line d-block"></i>No trades for this day.</div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = trades.map(t => `
+    <tr class="${rowClass(t)}">
+      <td><strong>${t.asset}</strong></td>
+      <td><span class="badge ${t.direction==='Long'?'bg-success':'bg-danger'}">${t.direction}</span></td>
+      <td>${fmt(t.entry)}</td>
+      <td>${fmt(t.exit)}</td>
+      <td>${fmt(t.stop)}</td>
+      <td>${fmt(t.tp)}</td>
+      <td>${t.risk_usd ? '$'+fmt(t.risk_usd) : '—'}</td>
+      <td>${fmtR(t.r_outcome)}</td>
+      <td>${fmtPnl(t.pnl_usd)}</td>
+      <td>${statusBadge(t.status)}${t.is_best_opp ? ' <span title="Best Opp">⭐</span>' : ''}</td>
+      <td>${tagHtml(t.patterns)}</td>
+      <td>${t.market_condition ? `<span class="tag tag-mc">${t.market_condition.replace(/_/g,' ')}</span>` : '—'}</td>
+      <td style="max-width:180px;font-size:.78rem;color:var(--muted)">${t.notes||''}</td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-secondary py-0 px-1 me-1" onclick='openEditModal(${JSON.stringify(t)})' title="Edit"><i class="fa fa-pencil fa-sm"></i></button>
+        <button class="btn btn-sm btn-outline-danger py-0 px-1 del-btn" onclick="deleteTrade('${t.id}')" title="Delete"><i class="fa fa-trash fa-sm"></i></button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── Add Trade ─────────────────────────────────────────────────────────────────
+document.getElementById('saveTradeBtn').addEventListener('click', async () => {
+  const patterns = [...document.querySelectorAll('.t-pat:checked')].map(c => c.value);
+  const body = {
+    date: document.getElementById('t-date').value,
+    asset: document.getElementById('t-asset').value.trim(),
+    direction: document.getElementById('t-dir').value,
+    status: document.getElementById('t-status').value,
+    entry: parseFloat(document.getElementById('t-entry').value)||null,
+    exit: parseFloat(document.getElementById('t-exit').value)||null,
+    stop: parseFloat(document.getElementById('t-stop').value)||null,
+    tp: parseFloat(document.getElementById('t-tp').value)||null,
+    risk_usd: parseFloat(document.getElementById('t-risk').value)||null,
+    market_condition: document.getElementById('t-condition').value,
+    is_best_opp: document.getElementById('t-bestop').checked,
+    patterns,
+    notes: document.getElementById('t-notes').value.trim(),
+  };
+  if (!body.asset) { alert('Asset is required.'); return; }
+  await fetch('/trading/api/trades', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  bootstrap.Modal.getInstance(document.getElementById('addTradeModal')).hide();
+  // reset
+  document.getElementById('t-asset').value = '';
+  document.getElementById('t-notes').value = '';
+  document.querySelectorAll('.t-pat').forEach(c => c.checked = false);
+  document.getElementById('t-bestop').checked = false;
+  await loadAllTrades();
+  loadDayTrades();
+});
+
+// ── Edit Trade ────────────────────────────────────────────────────────────────
+function openEditModal(t) {
+  document.getElementById('et-id').value = t.id;
+  document.getElementById('et-date').value = t.date;
+  document.getElementById('et-asset').value = t.asset;
+  document.getElementById('et-dir').value = t.direction;
+  document.getElementById('et-status').value = t.status;
+  document.getElementById('et-entry').value = t.entry||'';
+  document.getElementById('et-exit').value = t.exit||'';
+  document.getElementById('et-stop').value = t.stop||'';
+  document.getElementById('et-tp').value = t.tp||'';
+  document.getElementById('et-risk').value = t.risk_usd||'';
+  document.getElementById('et-condition').value = t.market_condition||'';
+  document.getElementById('et-bestop').checked = !!t.is_best_opp;
+  document.getElementById('et-notes').value = t.notes||'';
+  document.querySelectorAll('.et-pat').forEach(c => { c.checked = (t.patterns||[]).includes(c.value); });
+  new bootstrap.Modal(document.getElementById('editTradeModal')).show();
+}
+
+document.getElementById('updateTradeBtn').addEventListener('click', async () => {
+  const id = document.getElementById('et-id').value;
+  const patterns = [...document.querySelectorAll('.et-pat:checked')].map(c => c.value);
+  const body = {
+    date: document.getElementById('et-date').value,
+    asset: document.getElementById('et-asset').value.trim(),
+    direction: document.getElementById('et-dir').value,
+    status: document.getElementById('et-status').value,
+    entry: parseFloat(document.getElementById('et-entry').value)||null,
+    exit: parseFloat(document.getElementById('et-exit').value)||null,
+    stop: parseFloat(document.getElementById('et-stop').value)||null,
+    tp: parseFloat(document.getElementById('et-tp').value)||null,
+    risk_usd: parseFloat(document.getElementById('et-risk').value)||null,
+    market_condition: document.getElementById('et-condition').value,
+    is_best_opp: document.getElementById('et-bestop').checked,
+    patterns,
+    notes: document.getElementById('et-notes').value.trim(),
+  };
+  await fetch(`/trading/api/trades/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  bootstrap.Modal.getInstance(document.getElementById('editTradeModal')).hide();
+  await loadAllTrades();
+  loadDayTrades();
+});
+
+// ── Delete Trade ──────────────────────────────────────────────────────────────
+async function deleteTrade(id) {
+  if (!confirm('Delete this trade?')) return;
+  await fetch(`/trading/api/trades/${id}`, { method: 'DELETE' });
+  await loadAllTrades();
+  loadDayTrades();
+}
+
+// ── Add Missed Opp ────────────────────────────────────────────────────────────
+document.getElementById('saveOppBtn').addEventListener('click', async () => {
+  const patterns = [...document.querySelectorAll('.o-pat:checked')].map(c => c.value);
+  const body = {
+    date: document.getElementById('o-date').value,
+    asset: document.getElementById('o-asset').value.trim(),
+    direction: document.getElementById('o-dir').value,
+    entry_zone: parseFloat(document.getElementById('o-entry').value)||null,
+    market_condition: document.getElementById('o-condition').value,
+    patterns,
+    why_missed: document.getElementById('o-why').value.trim(),
+    would_have_worked: document.getElementById('o-worked').checked,
+    notes: document.getElementById('o-notes').value.trim(),
+  };
+  if (!body.asset) { alert('Asset is required.'); return; }
+  await fetch('/trading/api/opps', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  bootstrap.Modal.getInstance(document.getElementById('addOppModal')).hide();
+  document.getElementById('o-asset').value = '';
+  document.getElementById('o-why').value = '';
+  document.getElementById('o-notes').value = '';
+  document.querySelectorAll('.o-pat').forEach(c => c.checked = false);
+  document.getElementById('o-worked').checked = false;
+  await loadAllOpps();
+  renderOpps();
+});
+
+// ── Best Opps Tab ─────────────────────────────────────────────────────────────
+function renderOpps() {
+  const date = document.getElementById('globalDate').value;
+  // Best actual trades from allTrades for this date flagged is_best_opp
+  const best = allTrades.filter(t => t.date === date && t.is_best_opp);
+  const missed = allOpps.filter(o => o.date === date);
+
+  const bestContainer = document.getElementById('bestActualList');
+  if (!best.length) {
+    bestContainer.innerHTML = `<div class="empty-state"><i class="fa fa-star d-block"></i>No best trades flagged for this day.<br><small>Check "Best Opp ⭐" when adding a trade.</small></div>`;
+  } else {
+    bestContainer.innerHTML = best.map(t => `
+      <div class="opp-card best-actual mb-2">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="opp-asset">${t.asset}</span>
+          <span class="badge ${t.direction==='Long'?'bg-success':'bg-danger'}">${t.direction}</span>
+          ${fmtR(t.r_outcome)}
+          <span class="ms-auto">${statusBadge(t.status)}</span>
+        </div>
+        <div class="mb-1">${tagHtml(t.patterns)}${t.market_condition?`<span class="tag tag-mc">${t.market_condition.replace(/_/g,' ')}</span>`:''}</div>
+        ${t.notes ? `<div style="font-size:.8rem;color:var(--muted)">${t.notes}</div>` : ''}
+        <div style="font-size:.75rem;color:var(--muted)">Entry ${fmt(t.entry)} · Stop ${fmt(t.stop)} · TP ${fmt(t.tp)}</div>
+      </div>`).join('');
+  }
+
+  const missedContainer = document.getElementById('missedList');
+  if (!missed.length) {
+    missedContainer.innerHTML = `<div class="empty-state"><i class="fa fa-binoculars d-block"></i>No missed plays logged for this day.</div>`;
+  } else {
+    missedContainer.innerHTML = missed.map(o => `
+      <div class="opp-card missed mb-2">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="opp-asset">${o.asset}</span>
+          <span class="badge ${o.direction==='Long'?'bg-success':'bg-danger'}">${o.direction}</span>
+          ${o.would_have_worked ? '<span class="badge bg-success">✓ Worked</span>' : '<span class="badge bg-secondary">Didn\'t work</span>'}
+          <button class="btn btn-sm btn-link text-danger ms-auto py-0 del-btn" onclick="deleteOpp('${o.id}')" title="Delete"><i class="fa fa-trash fa-sm"></i></button>
+        </div>
+        <div class="mb-1">${tagHtml(o.patterns)}${o.market_condition?`<span class="tag tag-mc">${o.market_condition.replace(/_/g,' ')}</span>`:''}</div>
+        ${o.entry_zone ? `<div style="font-size:.8rem;color:var(--muted)">Entry zone: ${fmt(o.entry_zone)}</div>` : ''}
+        ${o.why_missed ? `<div style="font-size:.8rem;color:var(--muted)">Why missed: ${o.why_missed}</div>` : ''}
+        ${o.notes ? `<div style="font-size:.8rem;color:var(--muted)">${o.notes}</div>` : ''}
+      </div>`).join('');
+  }
+}
+
+async function deleteOpp(id) {
+  if (!confirm('Remove this missed opp?')) return;
+  await fetch(`/trading/api/opps/${id}`, { method: 'DELETE' });
+  await loadAllOpps();
+  renderOpps();
+}
+
+// ── Stats Tab ─────────────────────────────────────────────────────────────────
+function renderStats() {
+  const from = document.getElementById('statsFrom').value;
+  const to   = document.getElementById('statsTo').value;
+  const trades = allTrades.filter(t => t.date >= from && t.date <= to && t.r_outcome !== null && t.r_outcome !== undefined);
+
+  const total = trades.length;
+  const wins  = trades.filter(t => t.r_outcome > 0);
+  const losses = trades.filter(t => t.r_outcome < 0);
+  const winRate = total ? Math.round(wins.length / total * 100) : null;
+  const avgWin  = wins.length  ? wins.reduce((a,t)=>a+t.r_outcome,0)/wins.length : null;
+  const avgLoss = losses.length ? losses.reduce((a,t)=>a+t.r_outcome,0)/losses.length : null;
+  const best  = trades.length ? Math.max(...trades.map(t=>t.r_outcome)) : null;
+  const worst = trades.length ? Math.min(...trades.map(t=>t.r_outcome)) : null;
+
+  document.getElementById('kpi-total').textContent = total || '0';
+  document.getElementById('kpi-winrate').textContent = winRate !== null ? winRate + '%' : '—';
+  document.getElementById('kpi-avgwin').textContent  = avgWin !== null ? '+' + avgWin.toFixed(2) + 'R' : '—';
+  document.getElementById('kpi-avgloss').textContent = avgLoss !== null ? avgLoss.toFixed(2) + 'R' : '—';
+  document.getElementById('kpi-best').textContent    = best !== null ? (best>0?'+':'') + best.toFixed(2) + 'R' : '—';
+  document.getElementById('kpi-worst').textContent   = worst !== null ? worst.toFixed(2) + 'R' : '—';
+
+  // Streak & drawdown
+  const sorted = [...trades].sort((a,b)=>a.date.localeCompare(b.date)||(a.created_at||'').localeCompare(b.created_at||''));
+  let curStreak = 0, curStreakType = null, maxWin = 0, tempWin = 0, drawdown = 0, curDrawdown = 0;
+  sorted.forEach(t => {
+    const w = t.r_outcome > 0;
+    if (curStreakType === null) { curStreakType = w; curStreak = 1; }
+    else if (w === curStreakType) curStreak++;
+    else { curStreakType = w; curStreak = 1; }
+    if (w) { tempWin++; maxWin = Math.max(maxWin, tempWin); curDrawdown = 0; }
+    else { tempWin = 0; curDrawdown++; drawdown = Math.max(drawdown, curDrawdown); }
+  });
+  const streakEl = document.getElementById('currentStreak');
+  if (!sorted.length) {
+    streakEl.textContent = '—'; streakEl.className = 'streak-badge streak-none';
+  } else {
+    const label = curStreakType ? `${curStreak}W` : `${curStreak}L`;
+    streakEl.textContent = label;
+    streakEl.className = 'streak-badge ' + (curStreakType ? 'streak-win' : 'streak-loss');
+  }
+  document.getElementById('maxWinStreak').textContent = maxWin ? `${maxWin}W` : '—';
+  document.getElementById('maxDrawdown').textContent  = drawdown ? `${drawdown}L` : '—';
+
+  // P&L curve
+  const byDay = {};
+  sorted.forEach(t => { byDay[t.date] = (byDay[t.date]||0) + t.r_outcome; });
+  const days = Object.keys(byDay).sort();
+  let cumR = 0;
+  const cumData = days.map(d => { cumR += byDay[d]; return +cumR.toFixed(2); });
+
+  if (pnlChartInst) pnlChartInst.destroy();
+  const pnlCtx = document.getElementById('pnlChart').getContext('2d');
+  pnlChartInst = new Chart(pnlCtx, {
+    type: 'line',
+    data: {
+      labels: days,
+      datasets: [{ label: 'Cumulative R', data: cumData, borderColor: '#0d6efd', backgroundColor: 'rgba(13,110,253,.08)', fill: true, tension: .35, pointRadius: 3 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+  });
+
+  // Win/Loss by weekday
+  const days7 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const wdWins  = Array(7).fill(0), wdLoss = Array(7).fill(0);
+  sorted.forEach(t => {
+    const wd = new Date(t.date + 'T12:00:00').getDay();
+    if (t.r_outcome > 0) wdWins[wd]++;
+    else wdLoss[wd]++;
+  });
+
+  if (weekdayChartInst) weekdayChartInst.destroy();
+  const wdCtx = document.getElementById('weekdayChart').getContext('2d');
+  weekdayChartInst = new Chart(wdCtx, {
+    type: 'bar',
+    data: {
+      labels: days7,
+      datasets: [
+        { label: 'Wins',   data: wdWins, backgroundColor: 'rgba(25,135,84,.7)'  },
+        { label: 'Losses', data: wdLoss, backgroundColor: 'rgba(220,53,69,.7)' }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }, scales: { x: { stacked: false }, y: { stacked: false, ticks: { precision: 0 } } } }
+  });
+}
+
+// ── Patterns Tab ──────────────────────────────────────────────────────────────
+function renderPatterns() {
+  const closedTrades = allTrades.filter(t => t.r_outcome !== null && t.r_outcome !== undefined);
+
+  // Pattern aggregation
+  const patMap = {};
+  closedTrades.forEach(t => {
+    (t.patterns||[]).forEach(p => {
+      if (!patMap[p]) patMap[p] = { count:0, wins:0, sumR:0 };
+      patMap[p].count++;
+      if (t.r_outcome > 0) patMap[p].wins++;
+      patMap[p].sumR += t.r_outcome;
+    });
+  });
+
+  const patRows = Object.entries(patMap).sort((a,b) => b[1].count - a[1].count);
+  const tbody = document.getElementById('patternBody');
+  if (!patRows.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="fa fa-tags d-block"></i>No tagged trades yet.</div></td></tr>`;
+  } else {
+    const maxAvgR = Math.max(...patRows.map(([,v]) => Math.abs(v.sumR/v.count)), 0.01);
+    tbody.innerHTML = patRows.map(([p, v]) => {
+      const avgR = v.sumR/v.count;
+      const wr = Math.round(v.wins/v.count*100);
+      const barW = Math.max(4, Math.round(Math.abs(avgR)/maxAvgR*120));
+      const barCol = avgR >= 0 ? 'var(--win)' : 'var(--loss)';
+      return `<tr>
+        <td><span class="tag ${PATTERN_TAGS.chart.includes(p)?'tag-chart':PATTERN_TAGS.price_action.includes(p)?'tag-pa':''}">${p.replace(/_/g,' ')}</span></td>
+        <td>${v.count}</td>
+        <td><span class="${wr>=50?'text-success':'text-danger'} fw-semibold">${wr}%</span></td>
+        <td><span class="${avgR>=0?'r-win':'r-loss'}">${avgR>=0?'+':''}${avgR.toFixed(2)}R</span></td>
+        <td><div class="pattern-bar" style="width:${barW}px;background:${barCol}"></div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Pattern bar chart
+  if (patternChartInst) patternChartInst.destroy();
+  const ptCtx = document.getElementById('patternChart').getContext('2d');
+  if (patRows.length) {
+    patternChartInst = new Chart(ptCtx, {
+      type: 'bar',
+      data: {
+        labels: patRows.map(([p]) => p.replace(/_/g,' ')),
+        datasets: [{ label: 'Avg R', data: patRows.map(([,v]) => +(v.sumR/v.count).toFixed(2)), backgroundColor: patRows.map(([,v]) => v.sumR/v.count >= 0 ? 'rgba(25,135,84,.7)' : 'rgba(220,53,69,.7)') }]
+      },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#f1f5f9' } } } }
+    });
+  }
+
+  // Condition table
+  const condMap = {};
+  closedTrades.forEach(t => {
+    const c = t.market_condition;
+    if (!c) return;
+    if (!condMap[c]) condMap[c] = { count:0, sumR:0 };
+    condMap[c].count++;
+    condMap[c].sumR += t.r_outcome;
+  });
+  const condRows = Object.entries(condMap).sort((a,b)=>b[1].count-a[1].count);
+  const condBody = document.getElementById('conditionBody');
+  if (!condRows.length) {
+    condBody.innerHTML = `<tr><td colspan="3"><div class="empty-state" style="padding:1rem"><i class="fa fa-cloud d-block" style="font-size:1.2rem"></i>No data.</div></td></tr>`;
+  } else {
+    condBody.innerHTML = condRows.map(([c,v]) => {
+      const avgR = v.sumR/v.count;
+      return `<tr>
+        <td><span class="tag tag-mc">${c.replace(/_/g,' ')}</span></td>
+        <td>${v.count}</td>
+        <td><span class="${avgR>=0?'r-win':'r-loss'}">${avgR>=0?'+':''}${avgR.toFixed(2)}R</span></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async () => {
+  await Promise.all([loadAllTrades(), loadAllOpps()]);
+  loadDayTrades();
+})();
+</script>
+</body>
+</html>
